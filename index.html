@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 FIFA World Cup — 赛程日历 & 分组战力</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--gold:#c8a960;--gold-light:#f0d68a;--bg:#0a0e1a;--card:#141e2b;--card-border:#2a3a4a;--text:#e8edf5;--text-muted:#8899aa;--text-dim:#556;--accent-green:#2d8a4e;--accent-red:#c0392b}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+body.detail-view{overflow:hidden}
+.hero{background:linear-gradient(135deg,#0f1923 0%,#1a2a3a 50%,#0d2818 100%);padding:30px 20px 20px;text-align:center;border-bottom:3px solid var(--gold);position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(ellipse at 50% 50%,rgba(200,169,96,0.08) 0%,transparent 60%);animation:shimmer 15s ease-in-out infinite}
+@keyframes shimmer{0%,100%{transform:translate(0,0)}50%{transform:translate(5%,5%)}}
+.hero .trophy{font-size:40px;display:inline-block;margin-bottom:4px;position:relative;z-index:1}
+.hero h1{font-size:clamp(22px,4vw,40px);font-weight:900;letter-spacing:-1px;background:linear-gradient(135deg,var(--gold),var(--gold-light),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;position:relative;z-index:1}
+.hero .subtitle{font-size:14px;color:var(--text-muted);margin-top:4px;position:relative;z-index:1}
+.hero .date-badge{display:inline-block;margin-top:8px;padding:4px 16px;border:1px solid rgba(200,169,96,0.3);border-radius:20px;font-size:13px;color:var(--gold);background:rgba(200,169,96,0.08);position:relative;z-index:1}
+.calendar-section{max-width:1400px;margin:0 auto;padding:16px 16px 0}
+.calendar-section h2{font-size:18px;font-weight:700;color:var(--gold);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.calendar-wrap{background:var(--card);border:1px solid var(--card-border);border-radius:14px;overflow:hidden}
+.calendar-nav{display:flex;justify-content:space-between;align-items:center;padding:10px 18px;background:linear-gradient(90deg,#1d2d3d,#253545);border-bottom:1px solid var(--card-border)}
+.calendar-nav button{background:rgba(200,169,96,0.1);border:1px solid rgba(200,169,96,0.2);color:var(--gold);padding:4px 12px;border-radius:6px;cursor:pointer;font-size:13px;transition:all .15s}
+.calendar-nav button:hover{background:rgba(200,169,96,0.2)}
+.calendar-nav .month-label{font-weight:700;color:var(--gold-light);font-size:15px}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:0}
+.calendar-header{background:#1a2635;padding:8px 2px;text-align:center;font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--card-border)}
+.calendar-day{min-height:120px;padding:0;border-right:1px solid rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.03);background:rgba(255,255,255,0.01);position:relative;display:flex;flex-direction:column}
+.calendar-day.today{background:rgba(200,169,96,0.08);border:1px solid var(--gold);box-shadow:inset 0 0 20px rgba(200,169,96,0.05)}
+.calendar-day.today .day-num{color:var(--gold);font-weight:800}
+.calendar-day.empty{background:transparent}
+.calendar-day.has-match{cursor:pointer}
+.calendar-day.has-match:hover{background:rgba(200,169,96,0.05)}
+.cal-day-header{display:flex;justify-content:space-between;align-items:center;padding:3px 5px;background:rgba(0,0,0,0.2);flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.cal-day-header .day-num{font-size:13px;font-weight:700;color:var(--text-dim)}
+.cal-day-header .match-count{font-size:10px;color:var(--text-muted);white-space:nowrap}
+.cal-matches{flex:1;overflow-y:auto;padding:3px}
+.cal-match{display:grid;grid-template-columns:20px 1fr 40px;gap:3px;padding:4px 5px;margin-bottom:2px;border-radius:4px;background:rgba(200,169,96,0.06);align-items:center;transition:background .15s;cursor:pointer}
+.cal-match:hover{background:rgba(200,169,96,0.15)}
+.cal-match .cm-grp{font-size:11px;font-weight:800;color:var(--gold);text-align:center}
+.cal-match .cm-vs-row{display:flex;align-items:center;justify-content:space-between;gap:1px;min-width:0}
+.cal-match .cm-vs-row .cm-team{font-size:11px;font-weight:600;color:#dde;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;text-align:center}
+.cal-match .cm-vs-row .cm-vs-word{font-size:10px;font-weight:700;color:var(--gold);flex-shrink:0;padding:0 3px}
+.cal-match .cm-time{font-size:11px;font-weight:700;color:var(--gold-light);text-align:right;line-height:1.2}
+.cal-match .cm-tz{font-size:7px;color:var(--text-dim);text-align:right;line-height:1}
+.cal-match.ko-match{background:rgba(192,57,43,0.1)}
+.cal-match.ko-match .cm-grp{color:var(--accent-red)}
+.cal-match.ko-match .cm-time{color:var(--accent-red)}
+.container{max-width:1400px;margin:0 auto;padding:20px 16px 40px}
+.legend{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px;background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:14px 18px}
+.legend-left{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.legend-title{font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px}
+.legend-stars{display:flex;gap:4px}
+.legend-stars span{font-size:12px;color:var(--gold)}
+.legend-labels{display:flex;gap:6px;flex-wrap:wrap}
+.legend-labels .tag{font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(200,169,96,0.1);border:1px solid rgba(200,169,96,0.2);color:var(--gold)}
+.stats-bar{display:flex;gap:14px;font-size:12px;color:var(--text-muted)}
+.stats-bar strong{color:var(--gold);font-weight:700}
+.groups-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px}
+.group-card{background:linear-gradient(160deg,var(--card) 0%,#1a2635 100%);border:1px solid var(--card-border);border-radius:14px;overflow:hidden;transition:transform .2s,box-shadow .2s,border-color .2s}
+.group-card:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,0.4);border-color:var(--gold)}
+.group-header{padding:12px 16px;background:linear-gradient(90deg,#1d2d3d,#253545);border-bottom:2px solid var(--gold);font-size:16px;font-weight:800;letter-spacing:1px;color:var(--gold-light)}
+.group-body{padding:4px 12px 12px}
+.team-row{display:flex;align-items:flex-start;padding:10px 8px;border-bottom:1px solid rgba(255,255,255,0.03);gap:8px;cursor:pointer;transition:background .15s;border-radius:6px}
+.team-row:last-child{border-bottom:none}
+.team-row:hover{background:rgba(200,169,96,0.06)}
+.team-pos{width:20px;font-size:11px;font-weight:700;color:var(--text-dim);text-align:center;flex-shrink:0;padding-top:3px}
+.team-info{flex:1;min-width:0}
+.team-name{font-size:14px;font-weight:700;color:var(--text);display:flex;align-items:baseline;gap:4px;flex-wrap:wrap}
+.team-name .flag{font-size:16px}
+.team-name .zh{font-weight:400;color:var(--text-muted);font-size:12px}
+.team-name .record{font-size:12px;color:var(--text-dim);font-weight:500;margin-left:auto}
+.team-rating{display:flex;align-items:center;gap:1px;margin-top:2px}
+.star{color:var(--gold);font-size:12px;line-height:1}
+.star.empty{color:#3a4a5a}
+.star.half{position:relative;display:inline-block;color:#3a4a5a}
+.star.half::before{content:'★';position:absolute;left:0;top:0;width:50%;overflow:hidden;color:var(--gold)}
+.rating-score{font-size:10px;color:var(--text-dim);margin-left:4px;font-weight:600}
+.team-reason{font-size:11px;color:var(--text-muted);margin-top:2px;line-height:1.35}
+.detail-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:100;overflow-y:auto;padding:20px;backdrop-filter:blur(4px)}
+.detail-overlay.active{display:block}
+.detail-card{max-width:1000px;margin:20px auto;background:linear-gradient(160deg,#141e2b,#1a2635);border:1px solid var(--card-border);border-radius:16px;overflow:hidden;animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.detail-close{position:sticky;top:0;float:right;background:rgba(200,169,96,0.1);border:1px solid rgba(200,169,96,0.2);color:var(--gold);width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;margin:10px;transition:all .15s}
+.detail-close:hover{background:rgba(200,169,96,0.25)}
+.detail-hero{padding:24px 28px 16px;background:linear-gradient(135deg,#1d2d3d,#253545);border-bottom:2px solid var(--gold)}
+.detail-hero .team-big{font-size:32px;font-weight:900;display:flex;align-items:center;gap:12px}
+.detail-hero .team-big .flag{font-size:36px}
+.detail-hero .team-big .zh{font-weight:400;color:var(--text-muted);font-size:20px}
+.detail-hero .detail-meta{display:flex;flex-wrap:wrap;gap:20px;margin-top:12px;font-size:13px;color:var(--text-muted)}
+.detail-hero .detail-meta span{display:flex;align-items:center;gap:4px}
+.detail-hero .rating-big{display:flex;align-items:center;gap:6px;margin-top:8px}
+.detail-hero .rating-big .star{font-size:18px}
+.detail-hero .reason-big{font-size:13px;color:var(--text-muted);margin-top:8px;line-height:1.5;padding:8px 12px;background:rgba(200,169,96,0.05);border-radius:8px;border-left:3px solid var(--gold)}
+.detail-tabs{display:flex;border-bottom:1px solid var(--card-border);overflow-x:auto}
+.detail-tab{padding:10px 20px;font-size:13px;font-weight:600;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;background:none;border-top:none;border-left:none;border-right:none}
+.detail-tab:hover{color:var(--text);background:rgba(255,255,255,0.02)}
+.detail-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.detail-content{padding:20px 24px}
+.detail-panel{display:none}
+.detail-panel.active{display:block}
+.squad-table{width:100%;border-collapse:collapse;font-size:12px}
+.squad-table th{padding:7px 8px;text-align:left;font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--card-border);background:#1a2635}
+.squad-table td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:middle}
+.squad-table tr:hover td{background:rgba(200,169,96,0.03)}
+.squad-table .pos-badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;text-transform:uppercase}
+.pos-GK{background:rgba(200,169,96,0.15);color:var(--gold)}
+.pos-DEF{background:rgba(45,138,78,0.15);color:#5dca8a}
+.pos-MID{background:rgba(52,152,219,0.15);color:#5dade2}
+.pos-FWD{background:rgba(192,57,43,0.15);color:#e74c3c}
+.squad-table .club{font-size:10px;color:var(--text-muted)}
+.squad-table .cn{font-size:11px;color:#aabbcc;font-weight:500}
+.squad-table .age{text-align:center;color:var(--text-muted);font-size:11px}
+.squad-table .ps{display:flex;gap:1px;align-items:center;width:90px}
+.squad-table .ps .star{font-size:9px}
+.match-table{width:100%;border-collapse:collapse;font-size:13px}
+.match-table th{padding:8px 10px;text-align:left;font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--card-border);background:#1a2635}
+.match-table td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:middle}
+.match-table .match-vs{font-weight:700}
+.match-table .match-win{color:var(--accent-green)}
+.match-table .match-lose{color:var(--accent-red)}
+.match-table .match-draw{color:var(--gold)}
+.match-table .match-group{font-size:11px;color:var(--text-dim)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.stat-box{background:rgba(255,255,255,0.02);border:1px solid var(--card-border);border-radius:8px;padding:12px 14px}
+.stat-box .stat-val{font-size:24px;font-weight:800;color:var(--gold)}
+.stat-box .stat-label{font-size:11px;color:var(--text-muted);margin-top:2px}
+@media(max-width:700px){
+  .groups-grid{grid-template-columns:1fr}
+  .legend{flex-direction:column;align-items:flex-start}
+  .stats-bar{flex-wrap:wrap;gap:6px;font-size:11px}
+  .calendar-day{min-height:60px}
+  .cal-match .cm-team{font-size:10px}
+  .detail-card{margin:10px}
+  .detail-hero{padding:16px}
+  .detail-hero .team-big{font-size:24px}
+  .detail-content{padding:12px}
+  .squad-table th,.squad-table td{padding:3px 4px;font-size:10px}
+  .detail-tab{padding:8px 12px;font-size:12px}
+}
+.footer{text-align:center;padding:24px 16px;font-size:11px;color:var(--text-dim);border-top:1px solid #1a2a3a;margin-top:30px}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="trophy">🏆</div>
+  <h1>2026 FIFA World Cup ™</h1>
+  <p class="subtitle">🇨🇦 Canada · 🇲🇽 Mexico · 🇺🇸 United States</p>
+  <div class="date-badge">📅 June 11 – July 19, 2026 &nbsp;·&nbsp; 48 Teams · 12 Groups</div>
+</div>
+
+<div class="calendar-section" id="calendarSection">
+  <h2>📅 赛程日历 <span style="font-size:11px;color:var(--text-dim);font-weight:400">(北京时间 UTC+8)</span></h2>
+  <div class="calendar-wrap">
+    <div class="calendar-nav">
+      <button onclick="switchMonth(-1)">‹ Prev</button>
+      <span class="month-label" id="monthLabel">June 2026</span>
+      <button onclick="switchMonth(1)">Next ›</button>
+    </div>
+    <div class="calendar-grid" id="calendarGrid"></div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="legend">
+    <div class="legend-left">
+      <span class="legend-title">战力评级</span>
+      <div class="legend-stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+      <div class="legend-labels">
+        <span class="tag">★★★★★ 夺冠热门</span>
+        <span class="tag">★★★★ 实力强劲</span>
+        <span class="tag">★★★ 竞争力不错</span>
+        <span class="tag">★★ 实力有限</span>
+        <span class="tag">★ 黑马/鱼腩</span>
+      </div>
+    </div>
+    <div class="stats-bar">
+      <span>⚽ <strong>48</strong> 球队</span>
+      <span>🏟️ <strong>16</strong> 城市</span>
+      <span>📅 <strong>104</strong> 场比赛</span>
+    </div>
+  </div>
+  <div class="groups-grid" id="groupsContainer"></div>
+</div>
+
+<div class="footer">
+  <p>数据来源：BBC Sport · FIFA · 战力评分为主观分析，仅供参考 🌟</p>
+</div>
+
+<div class="detail-overlay" id="detailOverlay">
+  <div class="detail-card" id="detailCard">
+    <button class="detail-close" onclick="closeDetail()">✕</button>
+    <div id="detailContent"></div>
+  </div>
+</div>
+
+<script>
+const MATCHES = [
+  {d:11,m:6,grp:'A',h:'Mexico',a:'South Africa',t:'20:00',p:'GS'},
+  {d:12,m:6,grp:'A',h:'South Korea',a:'Czech Republic',t:'03:00',p:'GS'},
+  {d:12,m:6,grp:'B',h:'Canada',a:'Bosnia and Herzegovina',t:'20:00',p:'GS'},
+  {d:13,m:6,grp:'B',h:'Qatar',a:'Switzerland',t:'20:00',p:'GS'},
+  {d:13,m:6,grp:'C',h:'Brazil',a:'Morocco',t:'23:00',p:'GS'},
+  {d:13,m:6,grp:'D',h:'United States',a:'Paraguay',t:'02:00',p:'GS'},
+  {d:14,m:6,grp:'C',h:'Haiti',a:'Scotland',t:'02:00',p:'GS'},
+  {d:14,m:6,grp:'D',h:'Australia',a:'Turkey',t:'05:00',p:'GS'},
+  {d:14,m:6,grp:'E',h:'Germany',a:'Curacao',t:'18:00',p:'GS'},
+  {d:14,m:6,grp:'F',h:'Netherlands',a:'Japan',t:'21:00',p:'GS'},
+  {d:15,m:6,grp:'E',h:'Ivory Coast',a:'Ecuador',t:'00:00',p:'GS'},
+  {d:15,m:6,grp:'F',h:'Sweden',a:'Tunisia',t:'03:00',p:'GS'},
+  {d:15,m:6,grp:'G',h:'Belgium',a:'Egypt',t:'20:00',p:'GS'},
+  {d:15,m:6,grp:'H',h:'Spain',a:'Cape Verde',t:'17:00',p:'GS'},
+  {d:15,m:6,grp:'H',h:'Saudi Arabia',a:'Uruguay',t:'23:00',p:'GS'},
+  {d:16,m:6,grp:'G',h:'Iran',a:'New Zealand',t:'02:00',p:'GS'},
+  {d:16,m:6,grp:'I',h:'France',a:'Senegal',t:'20:00',p:'GS'},
+  {d:16,m:6,grp:'I',h:'Iraq',a:'Norway',t:'23:00',p:'GS'},
+  {d:17,m:6,grp:'J',h:'Argentina',a:'Algeria',t:'02:00',p:'GS'},
+  {d:17,m:6,grp:'J',h:'Austria',a:'Jordan',t:'05:00',p:'GS'},
+  {d:17,m:6,grp:'K',h:'Portugal',a:'Congo DR',t:'18:00',p:'GS'},
+  {d:17,m:6,grp:'L',h:'England',a:'Croatia',t:'21:00',p:'GS'},
+  {d:18,m:6,grp:'A',h:'Czech Republic',a:'South Africa',t:'17:00',p:'GS'},
+  {d:18,m:6,grp:'B',h:'Switzerland',a:'Bosnia and Herzegovina',t:'20:00',p:'GS'},
+  {d:18,m:6,grp:'B',h:'Canada',a:'Qatar',t:'23:00',p:'GS'},
+  {d:18,m:6,grp:'K',h:'Uzbekistan',a:'Colombia',t:'03:00',p:'GS'},
+  {d:18,m:6,grp:'L',h:'Ghana',a:'Panama',t:'00:00',p:'GS'},
+  {d:19,m:6,grp:'A',h:'Mexico',a:'South Korea',t:'02:00',p:'GS'},
+  {d:19,m:6,grp:'C',h:'Scotland',a:'Morocco',t:'23:00',p:'GS'},
+  {d:19,m:6,grp:'D',h:'United States',a:'Australia',t:'20:00',p:'GS'},
+  {d:20,m:6,grp:'C',h:'Brazil',a:'Haiti',t:'01:30',p:'GS'},
+  {d:20,m:6,grp:'D',h:'Turkey',a:'Paraguay',t:'04:00',p:'GS'},
+  {d:20,m:6,grp:'E',h:'Germany',a:'Ivory Coast',t:'21:00',p:'GS'},
+  {d:20,m:6,grp:'F',h:'Netherlands',a:'Sweden',t:'18:00',p:'GS'},
+  {d:21,m:6,grp:'E',h:'Ecuador',a:'Curacao',t:'01:00',p:'GS'},
+  {d:21,m:6,grp:'F',h:'Tunisia',a:'Japan',t:'05:00',p:'GS'},
+  {d:21,m:6,grp:'G',h:'Belgium',a:'Iran',t:'20:00',p:'GS'},
+  {d:21,m:6,grp:'H',h:'Spain',a:'Saudi Arabia',t:'17:00',p:'GS'},
+  {d:21,m:6,grp:'H',h:'Uruguay',a:'Cape Verde',t:'23:00',p:'GS'},
+  {d:22,m:6,grp:'G',h:'New Zealand',a:'Egypt',t:'02:00',p:'GS'},
+  {d:22,m:6,grp:'I',h:'France',a:'Iraq',t:'22:00',p:'GS'},
+  {d:22,m:6,grp:'J',h:'Argentina',a:'Austria',t:'18:00',p:'GS'},
+  {d:23,m:6,grp:'I',h:'Norway',a:'Senegal',t:'01:00',p:'GS'},
+  {d:23,m:6,grp:'J',h:'Jordan',a:'Algeria',t:'04:00',p:'GS'},
+  {d:23,m:6,grp:'K',h:'Portugal',a:'Uzbekistan',t:'18:00',p:'GS'},
+  {d:23,m:6,grp:'L',h:'England',a:'Ghana',t:'21:00',p:'GS'},
+  {d:24,m:6,grp:'B',h:'Bosnia and Herzegovina',a:'Qatar',t:'20:00',p:'GS'},
+  {d:24,m:6,grp:'B',h:'Switzerland',a:'Canada',t:'20:00',p:'GS'},
+  {d:24,m:6,grp:'C',h:'Morocco',a:'Haiti',t:'23:00',p:'GS'},
+  {d:24,m:6,grp:'C',h:'Scotland',a:'Brazil',t:'23:00',p:'GS'},
+  {d:24,m:6,grp:'K',h:'Colombia',a:'Congo DR',t:'03:00',p:'GS'},
+  {d:24,m:6,grp:'L',h:'Panama',a:'Croatia',t:'00:00',p:'GS'},
+  {d:25,m:6,grp:'A',h:'Czech Republic',a:'Mexico',t:'02:00',p:'GS'},
+  {d:25,m:6,grp:'A',h:'South Africa',a:'South Korea',t:'02:00',p:'GS'},
+  {d:25,m:6,grp:'E',h:'Curacao',a:'Ivory Coast',t:'21:00',p:'GS'},
+  {d:25,m:6,grp:'E',h:'Ecuador',a:'Germany',t:'21:00',p:'GS'},
+  {d:26,m:6,grp:'D',h:'Paraguay',a:'Australia',t:'03:00',p:'GS'},
+  {d:26,m:6,grp:'D',h:'Turkey',a:'United States',t:'03:00',p:'GS'},
+  {d:26,m:6,grp:'F',h:'Japan',a:'Sweden',t:'00:00',p:'GS'},
+  {d:26,m:6,grp:'F',h:'Tunisia',a:'Netherlands',t:'00:00',p:'GS'},
+  {d:26,m:6,grp:'I',h:'Norway',a:'France',t:'20:00',p:'GS'},
+  {d:26,m:6,grp:'I',h:'Senegal',a:'Iraq',t:'20:00',p:'GS'},
+  {d:27,m:6,grp:'G',h:'Egypt',a:'Iran',t:'04:00',p:'GS'},
+  {d:27,m:6,grp:'G',h:'New Zealand',a:'Belgium',t:'04:00',p:'GS'},
+  {d:27,m:6,grp:'H',h:'Cape Verde',a:'Saudi Arabia',t:'01:00',p:'GS'},
+  {d:27,m:6,grp:'H',h:'Uruguay',a:'Spain',t:'01:00',p:'GS'},
+  {d:27,m:6,grp:'L',h:'Croatia',a:'Ghana',t:'22:00',p:'GS'},
+  {d:27,m:6,grp:'L',h:'Panama',a:'England',t:'22:00',p:'GS'},
+  {d:28,m:6,grp:'J',h:'Algeria',a:'Austria',t:'03:00',p:'GS'},
+  {d:28,m:6,grp:'J',h:'Jordan',a:'Argentina',t:'03:00',p:'GS'},
+  {d:28,m:6,grp:'K',h:'Colombia',a:'Portugal',t:'00:30',p:'GS'},
+  {d:28,m:6,grp:'K',h:'Congo DR',a:'Uzbekistan',t:'00:30',p:'GS'},
+  {d:28,m:6,grp:'R32',h:'TBC',a:'TBC',t:'20:00',p:'R32'},
+  {d:29,m:6,grp:'R32',h:'TBC',a:'TBC',t:'18:00',p:'R32'},
+  {d:29,m:6,grp:'R32',h:'TBC',a:'TBC',t:'21:30',p:'R32'},
+  {d:30,m:6,grp:'R32',h:'TBC',a:'TBC',t:'02:00',p:'R32'},
+  {d:30,m:6,grp:'R32',h:'TBC',a:'TBC',t:'18:00',p:'R32'},
+  {d:30,m:6,grp:'R32',h:'TBC',a:'TBC',t:'22:00',p:'R32'},
+  {d:1,m:7,grp:'R32',h:'TBC',a:'TBC',t:'TBC',p:'R32'},
+  {d:2,m:7,grp:'R32',h:'TBC',a:'TBC',t:'TBC',p:'R32'},
+  {d:5,m:7,grp:'R16',h:'TBC',a:'TBC',t:'TBC',p:'R16'},
+  {d:6,m:7,grp:'R16',h:'TBC',a:'TBC',t:'TBC',p:'R16'},
+  {d:7,m:7,grp:'R16',h:'TBC',a:'TBC',t:'TBC',p:'R16'},
+  {d:8,m:7,grp:'R16',h:'TBC',a:'TBC',t:'TBC',p:'R16'},
+  {d:11,m:7,grp:'QF',h:'TBC',a:'TBC',t:'TBC',p:'QF'},
+  {d:12,m:7,grp:'QF',h:'TBC',a:'TBC',t:'TBC',p:'QF'},
+  {d:15,m:7,grp:'SF',h:'TBC',a:'TBC',t:'TBC',p:'SF'},
+  {d:16,m:7,grp:'SF',h:'TBC',a:'TBC',t:'TBC',p:'SF'},
+  {d:18,m:7,grp:'3rd',h:'TBC',a:'TBC',t:'TBC',p:'3P'},
+  {d:19,m:7,grp:'Final',h:'TBC',a:'TBC',t:'TBC',p:'F'}
+];
+const PHASE_LABELS = {GS:'Group',R32:'Last 32',R16:'Round of 16',QF:'Quarter-Final',SF:'Semi-Final','3P':'3rd Place','F':'🏆 FINAL'};
+
+const TEAMS = {
+  'Mexico':{zh:'墨西哥',flag:'🇲🇽',rating:3.5,reason:'东道主之一，中北美传统强队，主场优势加持。近年美洲杯表现稳健，奥乔亚虽老但经验丰富，洛萨诺+希门尼斯攻击线有威胁'},
+  'South Africa':{zh:'南非',flag:'🇿🇦',rating:2,reason:'重返世界杯非洲劲旅，2010年东道主经历宝贵。身体对抗出色但技术层面与顶级有差距'},
+  'South Korea':{zh:'韩国',flag:'🇰🇷',rating:3,reason:'亚洲顶级，孙兴慜领衔的太极虎以顽强意志著称。2002年四强传奇，整体战术纪律严明'},
+  'Czech Republic':{zh:'捷克',flag:'🇨🇿',rating:3,reason:'欧洲传统劲旅，希克+绍切克双核驱动。整体战术素养高，大赛经验丰富，但深度略有不足'},
+  'Canada':{zh:'加拿大',flag:'🇨🇦',rating:3,reason:'东道主崛起新军，阿方索·戴维斯+乔纳森·戴维双子星闪耀。中北美进步最快的球队'},
+  'Bosnia and Herzegovina':{zh:'波黑',flag:'🇧🇦',rating:2.5,reason:'巴尔干劲旅重返世界杯，皮亚尼奇时代渐远但整体硬度尚存。防守组织是亮点'},
+  'Qatar':{zh:'卡塔尔',flag:'🇶🇦',rating:2,reason:'亚洲杯冠军，2022年东道主表现未达预期。团队默契好但大赛经验不足'},
+  'Switzerland':{zh:'瑞士',flag:'🇨🇭',rating:3.5,reason:'大赛型球队，防守体系成熟，多次淘汰赛经历。扎卡+索默领军，是不可忽视的硬骨头'},
+  'Brazil':{zh:'巴西',flag:'🇧🇷',rating:5,reason:'五星巴西永远是最大热门，维尼修斯+罗德里戈豪华攻击线，全队人才井喷深度恐怖'},
+  'Morocco':{zh:'摩洛哥',flag:'🇲🇦',rating:4,reason:'2022年世界杯四强黑马，非洲最强防线。齐耶赫+阿什拉夫领衔，技战术素养世界级'},
+  'Haiti':{zh:'海地',flag:'🇭🇹',rating:1.5,reason:'加勒比黑马重返世界杯，激情有余但实力差距明显。拼劲可嘉'},
+  'Scotland':{zh:'苏格兰',flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',rating:3,reason:'欧洲硬骨头重返大赛，罗伯逊+麦克托米奈领衔。团队协作好、斗志旺盛'},
+  'United States':{zh:'美国',flag:'🇺🇸',rating:3.5,reason:'东道主+中北美新王，普利西奇+雷纳+麦肯尼的青春风暴。主场加成不容小觑'},
+  'Paraguay':{zh:'巴拉圭',flag:'🇵🇾',rating:2.5,reason:'南美传统防守型球队，球风硬朗，阿尔米隆是进攻核心。但整体攻击力有限'},
+  'Australia':{zh:'澳大利亚',flag:'🇦🇺',rating:3,reason:'亚洲杯常客，身体对抗不吃亏。后卡希尔时代新一代球员逐渐接班'},
+  'Turkey':{zh:'土耳其',flag:'🇹🇷',rating:3,reason:'欧洲神经刀，2002季军底蕴。恰尔汗奥卢领军，遇强则强的特质让人又爱又恨'},
+  'Germany':{zh:'德国',flag:'🇩🇪',rating:4,reason:'四星战车大赛王者基因，穆西亚拉+维尔茨新星已全面接班。重建后的德国队更年轻更快'},
+  'Curacao':{zh:'库拉索',flag:'🇨🇼',rating:1,reason:'加勒比小国奇迹般打进正赛，人口不到20万。重在参与的世界杯之旅'},
+  'Ivory Coast':{zh:'科特迪瓦',flag:'🇨🇮',rating:3.5,reason:'非洲大象重返舞台，2023非洲杯冠军。凯西+阿莱等名将领衔，整体性强'},
+  'Ecuador':{zh:'厄瓜多尔',flag:'🇪🇨',rating:3,reason:'南美高原军团，凯塞多中场核心。年轻化改革见效，预选赛表现出色'},
+  'Netherlands':{zh:'荷兰',flag:'🇳🇱',rating:4,reason:'无冕之王全攻全守传承，范戴克+德容+加克波三线均衡。大赛底蕴深厚'},
+  'Japan':{zh:'日本',flag:'🇯🇵',rating:3.5,reason:'亚洲足球天花板，久保建英+三笘薰旅欧军团庞大。团队战术执行力世界级'},
+  'Sweden':{zh:'瑞典',flag:'🇸🇪',rating:3,reason:'北欧劲旅，伊萨克领衔新时代。防守稳健反击犀利，缺少绝对巨星但整体性强'},
+  'Tunisia':{zh:'突尼斯',flag:'🇹🇳',rating:2.5,reason:'北非劲旅防守硬朗，阿拉伯世界支持。大赛经验丰富但攻击力偏弱'},
+  'Belgium':{zh:'比利时',flag:'🇧🇪',rating:4,reason:'黄金一代进入尾声，但德布劳内+库尔图瓦仍处巅峰。特罗萨德+多库等新血注入'},
+  'Egypt':{zh:'埃及',flag:'🇪🇬',rating:3.5,reason:'非洲之王，萨拉赫最后的世界杯冲击。整体技术细腻攻防有序'},
+  'Iran':{zh:'伊朗',flag:'🇮🇷',rating:3,reason:'亚洲防守之王，塔雷米+阿兹蒙双枪。战术纪律亚洲顶级'},
+  'New Zealand':{zh:'新西兰',flag:'🇳🇿',rating:2,reason:'大洋洲霸主，克里斯·伍德领军。硬朗但节奏偏慢，与欧美差距明显'},
+  'Spain':{zh:'西班牙',flag:'🇪🇸',rating:4.5,reason:'传控鼻祖，亚马尔等超新星已接过大旗。2023欧国联冠军，技术统治力依旧'},
+  'Cape Verde':{zh:'佛得角',flag:'🇨🇻',rating:2,reason:'岛国奇迹，非洲小国首次亮相世界杯。技术不差但整体稚嫩'},
+  'Saudi Arabia':{zh:'沙特',flag:'🇸🇦',rating:2,reason:'亚洲劲旅，2022年爆冷阿根廷证明一切皆有可能。防守组织不错'},
+  'Uruguay':{zh:'乌拉圭',flag:'🇺🇾',rating:3.5,reason:'两星南美劲旅，努涅斯+巴尔韦德新黄金一代。传统硬朗球风永不过时'},
+  'France':{zh:'法国',flag:'🇫🇷',rating:5,reason:'近两届世界杯一冠一亚，姆巴佩时代正值巅峰。阵容深度让所有对手窒息'},
+  'Senegal':{zh:'塞内加尔',flag:'🇸🇳',rating:3.5,reason:'非洲冠军，马内虽老但全队非洲最强阵容之一。库利巴利领衔防线稳固'},
+  'Iraq':{zh:'伊拉克',flag:'🇮🇶',rating:2,reason:'战火中崛起的中东力量首次亮相。团队坚韧但个人能力上限有限'},
+  'Norway':{zh:'挪威',flag:'🇳🇴',rating:3.5,reason:'哈兰德+厄德高双核驱动，进攻火力欧洲顶级。时隔多年重返世界杯'},
+  'Argentina':{zh:'阿根廷',flag:'🇦🇷',rating:5,reason:'卫冕冠军！梅西虽退但恩佐+阿尔瓦雷斯+劳塔罗扛起大旗。团队凝聚力独一档'},
+  'Algeria':{zh:'阿尔及利亚',flag:'🇩🇿',rating:3,reason:'北非劲旅，马赫雷斯等老将压阵。整体性很强，阿拉伯技术流代表'},
+  'Austria':{zh:'奥地利',flag:'🇦🇹',rating:3,reason:'欧洲中坚，朗尼克打造高强度压迫体系。萨比策+阿拉巴领军层次分明'},
+  'Jordan':{zh:'约旦',flag:'🇯🇴',rating:2,reason:'亚洲杯亚军历史性首次晋级，黑马成色十足。整体实力与顶级有差距'},
+  'Portugal':{zh:'葡萄牙',flag:'🇵🇹',rating:4,reason:'2016欧洲杯冠军，B席+B费+莱奥豪华配置。C罗谢幕后的新时代正式开启'},
+  'Congo DR':{zh:'刚果金',flag:'🇨🇩',rating:2.5,reason:'非洲雄狮归来，身体素质爆炸但战术纪律不稳定。可制造惊喜'},
+  'Uzbekistan':{zh:'乌兹别克',flag:'🇺🇿',rating:2,reason:'中亚白狼首次亮相世界杯。整体实力与欧美列强有显著差距'},
+  'Colombia':{zh:'哥伦比亚',flag:'🇨🇴',rating:3.5,reason:'南美技术流代表，迪亚斯边路爆点+J罗经验压阵。2014八强底蕴'},
+  'England':{zh:'英格兰',flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',rating:4,reason:'三狮近年大赛稳定，贝林厄姆+凯恩双核驱动。2024欧洲杯亚军班底成熟'},
+  'Croatia':{zh:'克罗地亚',flag:'🇭🇷',rating:3.5,reason:'格子军团黄金一代夕阳红，莫德里奇最后一舞。2018亚军+2022季军韧性传奇'},
+  'Ghana':{zh:'加纳',flag:'🇬🇭',rating:3,reason:'非洲黑星，库杜斯等新星崛起。青春风暴暗藏杀机，中前场冲击力强'},
+  'Panama':{zh:'巴拿马',flag:'🇵🇦',rating:2,reason:'中北美小国首次参赛。硬朗防守型球队，整体实力有限'}
+};
+
+// 2026 FIFA World Cup - Complete Squad Data for All 48 Teams
+// Paste this directly into your HTML or load as a module
+
+const SQUADS = {
+
+
+  'Mexico': [
+    {n:'Guillermo Ochoa',cn:'奥乔亚',p:'GK',a:40,c:'Salernitana',l:'意甲',r:3.5},
+    {n:'Edson Álvarez',cn:'阿尔瓦雷斯',p:'DEF',a:28,c:'West Ham',l:'英超',r:4.0},
+    {n:'Hirving Lozano',cn:'洛萨诺',p:'FWD',a:30,c:'PSV Eindhoven',l:'荷甲',r:4.0},
+    {n:'Raúl Jiménez',cn:'希门尼斯',p:'FWD',a:35,c:'Fulham',l:'英超',r:3.5},
+    {n:'Santiago Giménez',cn:'圣地亚哥·希门尼斯',p:'FWD',a:25,c:'Feyenoord',l:'荷甲',r:4.0},
+    {n:'César Montes',cn:'蒙特斯',p:'DEF',a:29,c:'Almería',l:'西甲',r:3.5},
+    {n:'Johan Vásquez',cn:'巴斯克斯',p:'DEF',a:27,c:'Genoa',l:'意甲',r:3.0},
+    {n:'Jesús Gallardo',cn:'加拉多',p:'DEF',a:31,c:'Monterrey',l:'墨超',r:3.0},
+    {n:'Luis Chávez',cn:'查韦斯',p:'MID',a:30,c:'Dinamo Moscow',l:'俄超',r:3.5},
+    {n:'Carlos Rodríguez',cn:'罗德里格斯',p:'MID',a:29,c:'Cruz Azul',l:'墨超',r:3.0},
+    {n:'Luis Romo',cn:'罗莫',p:'MID',a:30,c:'Monterrey',l:'墨超',r:3.0},
+    {n:'Alexis Vega',cn:'维加',p:'FWD',a:28,c:'Guadalajara',l:'墨超',r:3.0},
+    {n:'Jorge Sánchez',cn:'桑切斯',p:'DEF',a:28,c:'Porto',l:'葡超',r:3.0},
+    {n:'Diego Lainez',cn:'莱内斯',p:'MID',a:25,c:'Tigres',l:'墨超',r:3.0}
+  ],
+
+  'South Africa': [
+    {n:'Ronwen Williams',cn:'威廉姆斯',p:'GK',a:34,c:'Mamelodi Sundowns',l:'南非超',r:3.0},
+    {n:'Percy Tau',cn:'陶',p:'FWD',a:32,c:'Al Ahly',l:'埃超',r:3.5},
+    {n:'Lyle Foster',cn:'福斯特',p:'FWD',a:25,c:'Burnley',l:'英冠',r:3.0},
+    {n:'Teboho Mokoena',cn:'莫科埃纳',p:'MID',a:29,c:'Mamelodi Sundowns',l:'南非超',r:3.0},
+    {n:'Mothobi Mvala',cn:'姆瓦拉',p:'MID',a:31,c:'Mamelodi Sundowns',l:'南非超',r:2.5},
+    {n:'Khuliso Mudau',cn:'穆道',p:'DEF',a:31,c:'Mamelodi Sundowns',l:'南非超',r:2.5},
+    {n:'Siyanda Xulu',cn:'舒鲁',p:'DEF',a:34,c:'SuperSport United',l:'南非超',r:2.5},
+    {n:'Zakhele Lepasa',cn:'莱帕萨',p:'FWD',a:29,c:'Orlando Pirates',l:'南非超',r:2.5},
+    {n:'Keagan Dolly',cn:'多利',p:'MID',a:33,c:'Kaizer Chiefs',l:'南非超',r:2.5},
+    {n:'Nyiko Mobbie',cn:'莫比',p:'DEF',a:31,c:'Sekhukhune United',l:'南非超',r:2.5},
+    {n:'Evidence Makgopa',cn:'马克戈帕',p:'FWD',a:25,c:'Orlando Pirates',l:'南非超',r:2.5},
+    {n:'Sphephelo Sithole',cn:'西索莱',p:'MID',a:27,c:'CD Tondela',l:'葡甲',r:2.5},
+    {n:'Bruce Bvuma',cn:'布武马',p:'GK',a:31,c:'Kaizer Chiefs',l:'南非超',r:2.0}
+  ],
+
+  'South Korea': [
+    {n:'Son Heung-min',cn:'孙兴慜',p:'FWD',a:33,c:'Tottenham',l:'英超',r:4.5},
+    {n:'Kim Min-jae',cn:'金玟哉',p:'DEF',a:29,c:'Bayern Munich',l:'德甲',r:4.5},
+    {n:'Lee Kang-in',cn:'李刚仁',p:'MID',a:25,c:'PSG',l:'法甲',r:4.0},
+    {n:'Hwang Hee-chan',cn:'黄喜灿',p:'FWD',a:30,c:'Wolves',l:'英超',r:3.5},
+    {n:'Hwang In-beom',cn:'黄仁范',p:'MID',a:29,c:'Feyenoord',l:'荷甲',r:3.5},
+    {n:'Kim Seung-gyu',cn:'金承奎',p:'GK',a:35,c:'Al-Shabab',l:'沙特联',r:3.0},
+    {n:'Jung Woo-young',cn:'郑优营',p:'MID',a:26,c:'Freiburg',l:'德甲',r:3.0},
+    {n:'Lee Jae-sung',cn:'李在城',p:'MID',a:33,c:'Mainz',l:'德甲',r:3.0},
+    {n:'Kim Young-gwon',cn:'金英权',p:'DEF',a:36,c:'Ulsan Hyundai',l:'K1联赛',r:3.0},
+    {n:'Cho Gue-sung',cn:'曹圭成',p:'FWD',a:28,c:'Midtjylland',l:'丹超',r:3.0},
+    {n:'Seol Young-woo',cn:'薛英佑',p:'DEF',a:27,c:'Ulsan Hyundai',l:'K1联赛',r:2.5},
+    {n:'Oh Hyeon-gyu',cn:'吴贤揆',p:'FWD',a:25,c:'Celtic',l:'苏超',r:2.5},
+    {n:'Paik Seung-ho',cn:'白昇浩',p:'MID',a:29,c:'Birmingham City',l:'英冠',r:2.5},
+    {n:'Yang Hyun-jun',cn:'杨贤俊',p:'FWD',a:23,c:'Celtic',l:'苏超',r:2.5}
+  ],
+
+  'Czech Republic': [
+    {n:'Tomáš Souček',cn:'绍切克',p:'MID',a:31,c:'West Ham',l:'英超',r:4.0},
+    {n:'Patrik Schick',cn:'希克',p:'FWD',a:30,c:'Bayer Leverkusen',l:'德甲',r:4.0},
+    {n:'Adam Hložek',cn:'赫洛热克',p:'FWD',a:23,c:'Bayer Leverkusen',l:'德甲',r:3.5},
+    {n:'Vladimír Coufal',cn:'曹法尔',p:'DEF',a:33,c:'West Ham',l:'英超',r:3.0},
+    {n:'Tomáš Holeš',cn:'霍莱什',p:'DEF',a:33,c:'Slavia Prague',l:'捷甲',r:3.0},
+    {n:'Jiří Pavlenka',cn:'帕夫连卡',p:'GK',a:34,c:'Werder Bremen',l:'德甲',r:3.0},
+    {n:'Tomáš Čvančara',cn:'奇万恰拉',p:'FWD',a:25,c:'Borussia Mönchengladbach',l:'德甲',r:3.0},
+    {n:'Jan Kuchta',cn:'库赫塔',p:'FWD',a:29,c:'Sparta Prague',l:'捷甲',r:3.0},
+    {n:'Alex Král',cn:'克拉尔',p:'MID',a:28,c:'Schalke 04',l:'德乙',r:2.5},
+    {n:'Václav Černý',cn:'切尔尼',p:'MID',a:28,c:'Rangers',l:'苏超',r:3.0},
+    {n:'David Zima',cn:'齐马',p:'DEF',a:25,c:'Slavia Prague',l:'捷甲',r:2.5},
+    {n:'Lukáš Provod',cn:'普罗沃德',p:'MID',a:29,c:'Slavia Prague',l:'捷甲',r:2.5},
+    {n:'Jaroslav Zelený',cn:'泽莱尼',p:'DEF',a:33,c:'Sparta Prague',l:'捷甲',r:2.5},
+    {n:'Matěj Kovář',cn:'科瓦日',p:'GK',a:26,c:'Leverkusen',l:'德甲',r:2.5}
+  ],
+
+
+
+  'Canada': [
+    {n:'Alphonso Davies',cn:'阿方索·戴维斯',p:'DEF',a:25,c:'Bayern Munich',l:'德甲',r:4.5},
+    {n:'Jonathan David',cn:'乔纳森·戴维',p:'FWD',a:26,c:'Lille',l:'法甲',r:4.0},
+    {n:'Tajon Buchanan',cn:'布坎南',p:'MID',a:27,c:'Inter Milan',l:'意甲',r:3.5},
+    {n:'Stephen Eustáquio',cn:'尤斯塔基奥',p:'MID',a:29,c:'Porto',l:'葡超',r:3.5},
+    {n:'Ismaël Koné',cn:'科内',p:'MID',a:23,c:'Marseille',l:'法甲',r:3.0},
+    {n:'Liam Millar',cn:'米拉尔',p:'FWD',a:26,c:'FC Basel',l:'瑞士超',r:2.5},
+    {n:'Derek Cornelius',cn:'科尼利厄斯',p:'DEF',a:28,c:'Olympiacos',l:'希超',r:2.5},
+    {n:'Alistair Johnston',cn:'约翰斯顿',p:'DEF',a:27,c:'Celtic',l:'苏超',r:3.0},
+    {n:'Kamal Miller',cn:'米勒',p:'DEF',a:29,c:'Inter Miami',l:'美职联',r:2.5},
+    {n:'Jonathan Osorio',cn:'奥索里奥',p:'MID',a:33,c:'Toronto FC',l:'美职联',r:2.5},
+    {n:'Cyle Larin',cn:'拉林',p:'FWD',a:31,c:'Mallorca',l:'西甲',r:3.0},
+    {n:'Milan Borjan',cn:'博尔扬',p:'GK',a:38,c:'Slovan Bratislava',l:'斯伐超',r:3.0},
+    {n:'Richie Laryea',cn:'拉耶亚',p:'DEF',a:31,c:'Toronto FC',l:'美职联',r:2.5},
+    {n:'Mathieu Choinière',cn:'舒瓦尼埃',p:'MID',a:27,c:'CF Montréal',l:'美职联',r:2.5}
+  ],
+
+  'Bosnia and Herzegovina': [
+    {n:'Edin Džeko',cn:'哲科',p:'FWD',a:40,c:'Fenerbahçe',l:'土超',r:4.0},
+    {n:'Miralem Pjanić',cn:'皮亚尼奇',p:'MID',a:36,c:'CSKA Moscow',l:'俄超',r:3.5},
+    {n:'Sead Kolašinac',cn:'科拉希纳茨',p:'DEF',a:32,c:'Atalanta',l:'意甲',r:3.0},
+    {n:'Ermedin Demirović',cn:'德米罗维奇',p:'FWD',a:28,c:'VfB Stuttgart',l:'德甲',r:3.5},
+    {n:'Miroslav Stevanović',cn:'斯特瓦诺维奇',p:'MID',a:35,c:'Servette',l:'瑞士超',r:2.5},
+    {n:'Amir Hadžiahmetović',cn:'哈济亚梅托维奇',p:'MID',a:29,c:'Beşiktaş',l:'土超',r:2.5},
+    {n:'Dennis Hadžikadunić',cn:'哈济卡杜尼奇',p:'DEF',a:27,c:'Rostov',l:'俄超',r:2.5},
+    {n:'Ibrahim Šehić',cn:'舍希奇',p:'GK',a:37,c:'Al-Khaleej',l:'沙特联',r:2.5},
+    {n:'Smail Prevljak',cn:'普雷夫利亚克',p:'FWD',a:31,c:'Hertha Berlin',l:'德乙',r:2.5},
+    {n:'Eldar Ćivić',cn:'契维奇',p:'DEF',a:30,c:'Ferencváros',l:'匈甲',r:2.5},
+    {n:'Gojko Cimirot',cn:'齐米罗特',p:'MID',a:33,c:'Rijeka',l:'克甲',r:2.5},
+    {n:'Benjamin Tahirović',cn:'塔希罗维奇',p:'MID',a:23,c:'Ajax',l:'荷甲',r:3.0},
+    {n:'Nihad Mujakić',cn:'穆亚基奇',p:'DEF',a:27,c:'Sarajevo',l:'波黑超',r:2.0}
+  ],
+
+  'Qatar': [
+    {n:'Akram Afif',cn:'阿菲夫',p:'FWD',a:29,c:'Al-Sadd',l:'卡塔尔联',r:3.5},
+    {n:'Almoez Ali',cn:'阿里',p:'FWD',a:29,c:'Al-Duhail',l:'卡塔尔联',r:3.5},
+    {n:'Bassam Al-Rawi',cn:'拉维',p:'DEF',a:28,c:'Al-Arabi',l:'卡塔尔联',r:3.0},
+    {n:'Abdelkarim Hassan',cn:'哈桑',p:'DEF',a:32,c:'Al-Sadd',l:'卡塔尔联',r:3.0},
+    {n:'Karim Boudiaf',cn:'布迪亚夫',p:'MID',a:35,c:'Al-Duhail',l:'卡塔尔联',r:3.0},
+    {n:'Mohammed Muntari',cn:'蒙塔里',p:'FWD',a:32,c:'Al-Gharafa',l:'卡塔尔联',r:2.5},
+    {n:'Saad Al Sheeb',cn:'谢布',p:'GK',a:36,c:'Al-Sadd',l:'卡塔尔联',r:2.5},
+    {n:'Hassan Al-Haydos',cn:'海多斯',p:'MID',a:35,c:'Al-Sadd',l:'卡塔尔联',r:3.0},
+    {n:'Tarek Salman',cn:'萨勒曼',p:'DEF',a:28,c:'Al-Sadd',l:'卡塔尔联',r:2.5},
+    {n:'Boualem Khoukhi',cn:'胡希',p:'DEF',a:35,c:'Al-Sadd',l:'卡塔尔联',r:2.5},
+    {n:'Abdulaziz Hatem',cn:'哈特姆',p:'MID',a:36,c:'Al-Rayyan',l:'卡塔尔联',r:2.5},
+    {n:'Ahmed Alaaeldin',cn:'阿拉尔丁',p:'FWD',a:33,c:'Al-Gharafa',l:'卡塔尔联',r:2.5},
+    {n:'Pedro Miguel',cn:'佩德罗·米格尔',p:'DEF',a:35,c:'Al-Sadd',l:'卡塔尔联',r:2.5},
+    {n:'Ismaeel Mohammad',cn:'穆罕默德',p:'MID',a:36,c:'Al-Duhail',l:'卡塔尔联',r:2.5}
+  ],
+
+  'Switzerland': [
+    {n:'Manuel Akanji',cn:'阿坎吉',p:'DEF',a:30,c:'Manchester City',l:'英超',r:4.0},
+    {n:'Granit Xhaka',cn:'扎卡',p:'MID',a:33,c:'Bayer Leverkusen',l:'德甲',r:4.0},
+    {n:'Breel Embolo',cn:'恩博洛',p:'FWD',a:29,c:'AS Monaco',l:'法甲',r:3.5},
+    {n:'Denis Zakaria',cn:'扎卡里亚',p:'MID',a:29,c:'AS Monaco',l:'法甲',r:3.5},
+    {n:'Ricardo Rodriguez',cn:'罗德里格斯',p:'DEF',a:33,c:'Torino',l:'意甲',r:3.0},
+    {n:'Yann Sommer',cn:'索默',p:'GK',a:37,c:'Inter Milan',l:'意甲',r:4.0},
+    {n:'Remo Freuler',cn:'弗罗伊勒',p:'MID',a:34,c:'Bologna',l:'意甲',r:3.0},
+    {n:'Ruben Vargas',cn:'巴尔加斯',p:'MID',a:27,c:'FC Augsburg',l:'德甲',r:3.0},
+    {n:'Noah Okafor',cn:'奥卡福尔',p:'FWD',a:26,c:'RB Leipzig',l:'德甲',r:3.5},
+    {n:'Zeki Amdouni',cn:'阿姆杜尼',p:'FWD',a:25,c:'Benfica',l:'葡超',r:3.0},
+    {n:'Silvan Widmer',cn:'威德默',p:'DEF',a:33,c:'Mainz',l:'德甲',r:2.5},
+    {n:'Michel Aebischer',cn:'艾比舍尔',p:'MID',a:29,c:'Bologna',l:'意甲',r:2.5},
+    {n:'Nico Elvedi',cn:'埃尔维迪',p:'DEF',a:29,c:'Borussia Mönchengladbach',l:'德甲',r:3.0},
+    {n:'Dan Ndoye',cn:'恩多耶',p:'MID',a:25,c:'Bologna',l:'意甲',r:3.0}
+  ],
+
+
+
+  'Brazil': [
+    {n:'Vinícius Júnior',cn:'维尼修斯',p:'FWD',a:25,c:'Real Madrid',l:'西甲',r:4.5},
+    {n:'Rodrygo',cn:'罗德里戈',p:'FWD',a:25,c:'Real Madrid',l:'西甲',r:4.5},
+    {n:'Raphinha',cn:'拉菲尼亚',p:'FWD',a:29,c:'Barcelona',l:'西甲',r:4.0},
+    {n:'Bruno Guimarães',cn:'吉马良斯',p:'MID',a:28,c:'Newcastle United',l:'英超',r:4.0},
+    {n:'Alisson',cn:'阿利松',p:'GK',a:33,c:'Liverpool',l:'英超',r:4.5},
+    {n:'Marquinhos',cn:'马尔基尼奥斯',p:'DEF',a:32,c:'PSG',l:'法甲',r:4.0},
+    {n:'Éder Militão',cn:'米利唐',p:'DEF',a:28,c:'Real Madrid',l:'西甲',r:4.0},
+    {n:'Gabriel Martinelli',cn:'马丁内利',p:'FWD',a:25,c:'Arsenal',l:'英超',r:4.0},
+    {n:'Lucas Paquetá',cn:'帕奎塔',p:'MID',a:28,c:'West Ham',l:'英超',r:4.0},
+    {n:'Danilo',cn:'达尼洛',p:'DEF',a:34,c:'Juventus',l:'意甲',r:3.0},
+    {n:'Endrick',cn:'恩德里克',p:'FWD',a:19,c:'Real Madrid',l:'西甲',r:4.0},
+    {n:'Gabriel Magalhães',cn:'加布里埃尔',p:'DEF',a:28,c:'Arsenal',l:'英超',r:4.0},
+    {n:'André',cn:'安德烈',p:'MID',a:24,c:'Flamengo',l:'巴甲',r:3.5},
+    {n:'Ederson',cn:'埃德森',p:'GK',a:32,c:'Manchester City',l:'英超',r:4.5}
+  ],
+
+  'Morocco': [
+    {n:'Achraf Hakimi',cn:'哈基米',p:'DEF',a:27,c:'PSG',l:'法甲',r:4.5},
+    {n:'Hakim Ziyech',cn:'齐耶赫',p:'MID',a:33,c:'Galatasaray',l:'土超',r:4.0},
+    {n:'Sofyan Amrabat',cn:'阿姆拉巴特',p:'MID',a:29,c:'Manchester United',l:'英超',r:3.5},
+    {n:'Noussair Mazraoui',cn:'马兹拉维',p:'DEF',a:28,c:'Bayern Munich',l:'德甲',r:3.5},
+    {n:'Yassine Bounou',cn:'布努',p:'GK',a:35,c:'Al-Hilal',l:'沙特联',r:4.0},
+    {n:'Romain Saïss',cn:'赛斯',p:'DEF',a:36,c:'Al-Sadd',l:'卡塔尔联',r:3.0},
+    {n:'Nayef Aguerd',cn:'阿格尔德',p:'DEF',a:30,c:'West Ham',l:'英超',r:3.5},
+    {n:'Azzedine Ounahi',cn:'乌纳希',p:'MID',a:26,c:'Marseille',l:'法甲',r:3.5},
+    {n:'Bilal El Khannouss',cn:'汉努斯',p:'MID',a:22,c:'Leicester City',l:'英超',r:3.0},
+    {n:'Youssef En-Nesyri',cn:'恩内西里',p:'FWD',a:29,c:'Fenerbahçe',l:'土超',r:3.5},
+    {n:'Sofiane Boufal',cn:'布法尔',p:'FWD',a:32,c:'Al-Rayyan',l:'卡塔尔联',r:3.0},
+    {n:'Elias Ben Seghir',cn:'本·塞吉尔',p:'MID',a:21,c:'AS Monaco',l:'法甲',r:3.0},
+    {n:'Ayoub El Kaabi',cn:'卡比',p:'FWD',a:32,c:'Al-Hilal',l:'沙特联',r:3.0},
+    {n:'Munir El Kajoui',cn:'穆尼尔',p:'GK',a:37,c:'Al-Wehda',l:'沙特联',r:2.5}
+  ],
+
+  'Haiti': [
+    {n:'Duckens Nazon',cn:'纳宗',p:'FWD',a:32,c:'CSKA Sofia',l:'保超',r:2.5},
+    {n:'Frantzdy Pierrot',cn:'皮埃罗',p:'FWD',a:31,c:'Maccabi Haifa',l:'以超',r:2.5},
+    {n:'Johny Placide',cn:'普拉西德',p:'GK',a:37,c:'Bastia',l:'法丙',r:2.5},
+    {n:'Ricardo Adé',cn:'阿代',p:'DEF',a:36,c:'Mirebalais',l:'海地甲',r:2.0},
+    {n:'Kevin Lafrance',cn:'拉弗朗斯',p:'DEF',a:36,c:'Chindia Târgoviște',l:'罗甲',r:2.0},
+    {n:'Carlens Arcus',cn:'阿库斯',p:'DEF',a:29,c:'Vitesse',l:'荷甲',r:2.5},
+    {n:'Bryan Alceus',cn:'阿尔塞乌斯',p:'MID',a:25,c:'Degerfors',l:'瑞典超',r:2.0},
+    {n:'Leverton Pierre',cn:'皮埃尔',p:'MID',a:28,c:'Dunajská Streda',l:'斯伐超',r:2.0},
+    {n:'Carnejy Antoine',cn:'安托万',p:'FWD',a:34,c:'Riga FC',l:'拉脱超',r:2.0},
+    {n:'Jeppe Simonsen',cn:'西蒙森',p:'MID',a:25,c:'HB Køge',l:'丹甲',r:2.0},
+    {n:'Steeven Saba',cn:'萨巴',p:'MID',a:33,c:'Violette AC',l:'海地甲',r:2.0},
+    {n:'Alex Junior Christian',cn:'克里斯蒂安',p:'DEF',a:22,c:'AEK Athens B',l:'希超B',r:2.0},
+    {n:'Bendeguz Dienes',cn:'迪埃内什',p:'GK',a:26,c:'Budapest Honvéd',l:'匈甲',r:2.0}
+  ],
+
+  'Scotland': [
+    {n:'Andy Robertson',cn:'罗伯逊',p:'DEF',a:32,c:'Liverpool',l:'英超',r:4.5},
+    {n:'Scott McTominay',cn:'麦克托米奈',p:'MID',a:29,c:'Manchester United',l:'英超',r:4.0},
+    {n:'John McGinn',cn:'麦金',p:'MID',a:31,c:'Aston Villa',l:'英超',r:4.0},
+    {n:'Kieran Tierney',cn:'蒂尔尼',p:'DEF',a:29,c:'Arsenal',l:'英超',r:3.5},
+    {n:'Billy Gilmour',cn:'吉尔摩',p:'MID',a:25,c:'Napoli',l:'意甲',r:3.5},
+    {n:'Angus Gunn',cn:'冈恩',p:'GK',a:30,c:'Norwich City',l:'英冠',r:3.0},
+    {n:'Che Adams',cn:'亚当斯',p:'FWD',a:29,c:'Southampton',l:'英超',r:3.0},
+    {n:'Ryan Christie',cn:'克里斯蒂',p:'MID',a:31,c:'Bournemouth',l:'英超',r:3.0},
+    {n:'Jack Hendry',cn:'亨德利',p:'DEF',a:31,c:'Al-Ettifaq',l:'沙特联',r:2.5},
+    {n:'Grant Hanley',cn:'汉利',p:'DEF',a:34,c:'Norwich City',l:'英冠',r:2.5},
+    {n:'Ryan Porteous',cn:'波蒂厄斯',p:'DEF',a:27,c:'Watford',l:'英冠',r:2.5},
+    {n:'Lyndon Dykes',cn:'戴克斯',p:'FWD',a:30,c:'QPR',l:'英冠',r:2.5},
+    {n:'Aaron Hickey',cn:'希基',p:'DEF',a:23,c:'Brentford',l:'英超',r:3.0},
+    {n:'Lewis Ferguson',cn:'弗格森',p:'MID',a:27,c:'Bologna',l:'意甲',r:3.5}
+  ],
+
+
+
+  'United States': [
+    {n:'Christian Pulisic',cn:'普利西奇',p:'FWD',a:27,c:'AC Milan',l:'意甲',r:4.0},
+    {n:'Weston McKennie',cn:'麦肯尼',p:'MID',a:27,c:'Juventus',l:'意甲',r:3.5},
+    {n:'Tyler Adams',cn:'亚当斯',p:'MID',a:27,c:'Bournemouth',l:'英超',r:3.5},
+    {n:'Gio Reyna',cn:'雷纳',p:'MID',a:23,c:'Borussia Dortmund',l:'德甲',r:3.5},
+    {n:'Folarin Balogun',cn:'巴洛贡',p:'FWD',a:24,c:'AS Monaco',l:'法甲',r:3.5},
+    {n:'Matt Turner',cn:'特纳',p:'GK',a:32,c:'Nottingham Forest',l:'英超',r:3.0},
+    {n:'Sergiño Dest',cn:'德斯特',p:'DEF',a:25,c:'PSV Eindhoven',l:'荷甲',r:3.0},
+    {n:'Antonee Robinson',cn:'罗宾逊',p:'DEF',a:28,c:'Fulham',l:'英超',r:3.5},
+    {n:'Timothy Weah',cn:'维阿',p:'FWD',a:26,c:'Juventus',l:'意甲',r:3.0},
+    {n:'Yunus Musah',cn:'穆萨',p:'MID',a:23,c:'AC Milan',l:'意甲',r:3.5},
+    {n:'Chris Richards',cn:'理查兹',p:'DEF',a:26,c:'Crystal Palace',l:'英超',r:3.0},
+    {n:'Cameron Carter-Vickers',cn:'卡特-维克斯',p:'DEF',a:28,c:'Celtic',l:'苏超',r:3.0},
+    {n:'Haji Wright',cn:'赖特',p:'FWD',a:28,c:'Coventry City',l:'英冠',r:2.5},
+    {n:'Brenden Aaronson',cn:'阿伦森',p:'MID',a:25,c:'Leeds United',l:'英冠',r:3.0}
+  ],
+
+  'Paraguay': [
+    {n:'Miguel Almirón',cn:'阿尔米隆',p:'MID',a:32,c:'Newcastle United',l:'英超',r:3.5},
+    {n:'Julio Enciso',cn:'恩西索',p:'FWD',a:22,c:'Brighton',l:'英超',r:3.5},
+    {n:'Gustavo Gómez',cn:'戈麦斯',p:'DEF',a:33,c:'Palmeiras',l:'巴甲',r:3.5},
+    {n:'Diego Gómez',cn:'迭戈·戈麦斯',p:'MID',a:23,c:'Inter Miami',l:'美职联',r:3.0},
+    {n:'Ángel Romero',cn:'罗梅罗',p:'FWD',a:33,c:'Corinthians',l:'巴甲',r:3.0},
+    {n:'Junior Alonso',cn:'阿隆索',p:'DEF',a:33,c:'Atlético Mineiro',l:'巴甲',r:3.0},
+    {n:'Júnior Barreto',cn:'巴雷托',p:'MID',a:25,c:'Moreirense',l:'葡超',r:2.5},
+    {n:'Antonio Sanabria',cn:'萨纳夫里亚',p:'FWD',a:30,c:'Torino',l:'意甲',r:3.0},
+    {n:'Carlos González',cn:'冈萨雷斯',p:'FWD',a:33,c:'Tigres',l:'墨超',r:2.5},
+    {n:'Ramón Sosa',cn:'索萨',p:'FWD',a:27,c:'Talleres',l:'阿甲',r:2.5},
+    {n:'Blas Riveros',cn:'里韦罗斯',p:'DEF',a:28,c:'Brøndby',l:'丹超',r:2.5},
+    {n:'Gatito Fernández',cn:'费尔南德斯',p:'GK',a:38,c:'Botafogo',l:'巴甲',r:2.5},
+    {n:'Juan Escobar',cn:'埃斯科巴',p:'DEF',a:30,c:'Cruz Azul',l:'墨超',r:2.5},
+    {n:'Carlos Miguel',cn:'米格尔',p:'GK',a:27,c:'Corinthians',l:'巴甲',r:2.5}
+  ],
+
+  'Australia': [
+    {n:'Harry Souttar',cn:'苏塔',p:'DEF',a:27,c:'Leicester City',l:'英冠',r:3.5},
+    {n:'Mathew Ryan',cn:'瑞安',p:'GK',a:34,c:'AZ Alkmaar',l:'荷甲',r:3.5},
+    {n:'Massimo Luongo',cn:'隆戈',p:'MID',a:33,c:'Ipswich Town',l:'英冠',r:3.0},
+    {n:'Aaron Mooy',cn:'穆伊',p:'MID',a:35,c:'Celtic',l:'苏超',r:3.0},
+    {n:'Jackson Irvine',cn:'欧文',p:'MID',a:33,c:'FC St. Pauli',l:'德乙',r:3.0},
+    {n:'Ajdin Hrustic',cn:'赫鲁斯蒂奇',p:'MID',a:29,c:'Verona',l:'意甲',r:3.0},
+    {n:'Craig Goodwin',cn:'古德温',p:'FWD',a:34,c:'Al-Wehda',l:'沙特联',r:2.5},
+    {n:'Mitchell Duke',cn:'杜克',p:'FWD',a:35,c:'Machida Zelvia',l:'J联赛',r:2.5},
+    {n:'Martin Boyle',cn:'博伊尔',p:'FWD',a:33,c:'Hibernian',l:'苏超',r:2.5},
+    {n:'Kye Rowles',cn:'罗尔斯',p:'DEF',a:27,c:'Hearts',l:'苏超',r:2.5},
+    {n:'Aziz Behich',cn:'贝希奇',p:'DEF',a:35,c:'Melbourne City',l:'澳超',r:2.5},
+    {n:'Thomas Deng',cn:'登格',p:'DEF',a:29,c:'Albirex Niigata',l:'J联赛',r:2.5},
+    {n:'Jason Davidson',cn:'戴维森',p:'DEF',a:34,c:'Eupen',l:'比甲',r:2.0},
+    {n:'Riley McGree',cn:'麦克格里',p:'MID',a:27,c:'Middlesbrough',l:'英冠',r:3.0}
+  ],
+
+  'Turkey': [
+    {n:'Hakan Çalhanoğlu',cn:'恰尔汗奥卢',p:'MID',a:32,c:'Inter Milan',l:'意甲',r:4.0},
+    {n:'Kenan Yıldız',cn:'伊尔迪兹',p:'FWD',a:21,c:'Juventus',l:'意甲',r:3.5},
+    {n:'Orkun Kökçü',cn:'科克曲',p:'MID',a:25,c:'Benfica',l:'葡超',r:3.5},
+    {n:'Çağlar Söyüncü',cn:'瑟云聚',p:'DEF',a:30,c:'Fenerbahçe',l:'土超',r:3.5},
+    {n:'Merih Demiral',cn:'德米拉尔',p:'DEF',a:28,c:'Al-Ahli',l:'沙特联',r:3.0},
+    {n:'Ferdi Kadıoğlu',cn:'卡迪奥卢',p:'DEF',a:26,c:'Fenerbahçe',l:'土超',r:3.5},
+    {n:'Berke Özer',cn:'厄泽尔',p:'GK',a:26,c:'Fenerbahçe',l:'土超',r:3.0},
+    {n:'İrfan Can Kahveci',cn:'卡赫韦奇',p:'MID',a:30,c:'Fenerbahçe',l:'土超',r:3.0},
+    {n:'Kerem Aktürkoğlu',cn:'阿克蒂尔科奥卢',p:'MID',a:27,c:'Galatasaray',l:'土超',r:3.5},
+    {n:'Yusuf Yazıcı',cn:'亚泽哲',p:'MID',a:29,c:'Lille',l:'法甲',r:3.0},
+    {n:'Enes Ünal',cn:'于纳尔',p:'FWD',a:29,c:'Bournemouth',l:'英超',r:3.0},
+    {n:'Cenk Özkacar',cn:'厄兹卡卡尔',p:'DEF',a:25,c:'Valencia',l:'西甲',r:2.5},
+    {n:'Barış Alper Yılmaz',cn:'伊尔马兹',p:'FWD',a:26,c:'Galatasaray',l:'土超',r:3.0},
+    {n:'Salih Özcan',cn:'厄兹詹',p:'MID',a:28,c:'Borussia Dortmund',l:'德甲',r:3.0}
+  ],
+
+
+
+  'Germany': [
+    {n:'Jamal Musiala',cn:'穆西亚拉',p:'MID',a:23,c:'Bayern Munich',l:'德甲',r:4.5},
+    {n:'Florian Wirtz',cn:'维尔茨',p:'MID',a:23,c:'Bayer Leverkusen',l:'德甲',r:4.5},
+    {n:'Kai Havertz',cn:'哈弗茨',p:'FWD',a:27,c:'Arsenal',l:'英超',r:4.0},
+    {n:'Joshua Kimmich',cn:'基米希',p:'MID',a:31,c:'Bayern Munich',l:'德甲',r:4.5},
+    {n:'Jamie Leweling',cn:'勒韦林',p:'FWD',a:25,c:'VfB Stuttgart',l:'德甲',r:3.5},
+    {n:'Jonathan Tah',cn:'塔赫',p:'DEF',a:30,c:'Bayer Leverkusen',l:'德甲',r:4.0},
+    {n:'Antonio Rüdiger',cn:'吕迪格',p:'DEF',a:33,c:'Real Madrid',l:'西甲',r:4.0},
+    {n:'David Raum',cn:'劳姆',p:'DEF',a:28,c:'RB Leipzig',l:'德甲',r:3.5},
+    {n:'Marc-André ter Stegen',cn:'特尔施特根',p:'GK',a:34,c:'Barcelona',l:'西甲',r:4.0},
+    {n:'Niclas Füllkrug',cn:'菲尔克鲁格',p:'FWD',a:33,c:'West Ham',l:'英超',r:3.5},
+    {n:'İlkay Gündoğan',cn:'京多安',p:'MID',a:35,c:'Manchester City',l:'英超',r:4.0},
+    {n:'Benjamin Henrichs',cn:'亨里希斯',p:'DEF',a:29,c:'RB Leipzig',l:'德甲',r:3.5},
+    {n:'Leroy Sané',cn:'萨内',p:'FWD',a:30,c:'Bayern Munich',l:'德甲',r:4.0},
+    {n:'Aleksandar Pavlović',cn:'帕夫洛维奇',p:'MID',a:22,c:'Bayern Munich',l:'德甲',r:3.5}
+  ],
+
+  'Curacao': [
+    {n:'Leandro Bacuna',cn:'巴库纳',p:'MID',a:34,c:'Groningen',l:'荷甲',r:2.5},
+    {n:'Juninho Bacuna',cn:'巴库纳',p:'MID',a:28,c:'Birmingham City',l:'英冠',r:2.5},
+    {n:'Cuco Martina',cn:'马蒂纳',p:'DEF',a:36,c:'Brentford',l:'英超',r:2.5},
+    {n:'Jarchinio Antonia',cn:'安东尼奥',p:'FWD',a:35,c:'ADO Den Haag',l:'荷甲',r:2.0},
+    {n:'Charlison Benschop',cn:'本绍普',p:'FWD',a:36,c:'Sandhausen',l:'德乙',r:2.0},
+    {n:'Jurien Gaari',cn:'加里',p:'DEF',a:32,c:'RKC Waalwijk',l:'荷甲',r:2.5},
+    {n:'Tyrick Bodak',cn:'博达克',p:'DEF',a:24,c:'VVV-Venlo',l:'荷乙',r:2.0},
+    {n:'Gervane Kastaneer',cn:'卡斯塔内尔',p:'FWD',a:30,c:'Kaiserslautern',l:'德乙',r:2.0},
+    {n:'Kevin Felida',cn:'费利达',p:'MID',a:25,c:'FC Den Bosch',l:'荷乙',r:2.0},
+    {n:'Kenji Gorré',cn:'戈雷',p:'MID',a:31,c:'Dordrecht',l:'荷乙',r:2.0},
+    {n:'Elson Hooi',cn:'霍伊',p:'MID',a:34,c:'KFC',l:'比乙',r:2.0},
+    {n:'Rody de Boer',cn:'德波尔',p:'GK',a:28,c:'Volendam',l:'荷甲',r:2.0},
+    {n:'Shanon Carmelia',cn:'卡梅利亚',p:'DEF',a:36,c:'Barendrecht',l:'荷丙',r:2.0},
+    {n:'Ayrton Statie',cn:'斯塔蒂',p:'MID',a:26,c:'Excelsior Maassluis',l:'荷丙',r:2.0}
+  ],
+
+  'Ivory Coast': [
+    {n:'Franck Kessié',cn:'凯西',p:'MID',a:29,c:'Al-Ahli',l:'沙特联',r:4.0},
+    {n:'Sébastien Haller',cn:'阿莱',p:'FWD',a:31,c:'Borussia Dortmund',l:'德甲',r:4.0},
+    {n:'Wilfried Zaha',cn:'扎哈',p:'FWD',a:33,c:'Galatasaray',l:'土超',r:3.5},
+    {n:'Seko Fofana',cn:'福法纳',p:'MID',a:31,c:'Al-Ettifaq',l:'沙特联',r:3.5},
+    {n:'Evan Ndicka',cn:'恩迪卡',p:'DEF',a:26,c:'AS Roma',l:'意甲',r:3.5},
+    {n:'Odilon Kossounou',cn:'科苏努',p:'DEF',a:25,c:'Bayer Leverkusen',l:'德甲',r:3.5},
+    {n:'Serge Aurier',cn:'奥里耶',p:'DEF',a:33,c:'Galatasaray',l:'土超',r:3.0},
+    {n:'Jean-Philippe Krasso',cn:'克拉索',p:'FWD',a:28,c:'Red Star Belgrade',l:'塞超',r:2.5},
+    {n:'Maxwel Cornet',cn:'科内特',p:'FWD',a:29,c:'West Ham',l:'英超',r:3.0},
+    {n:'Hamed Traorè',cn:'特拉奥雷',p:'MID',a:26,c:'Bournemouth',l:'英超',r:3.0},
+    {n:'Willy Boly',cn:'博利',p:'DEF',a:35,c:'Nottingham Forest',l:'英超',r:3.0},
+    {n:'Karim Konaté',cn:'科纳特',p:'FWD',a:22,c:'RB Salzburg',l:'奥超',r:3.0},
+    {n:'Yahia Fofana',cn:'福法纳',p:'GK',a:24,c:'Angers',l:'法甲',r:2.5},
+    {n:'Simon Adingra',cn:'阿丁格拉',p:'FWD',a:24,c:'Brighton',l:'英超',r:3.5}
+  ],
+
+  'Ecuador': [
+    {n:'Moises Caicedo',cn:'凯塞多',p:'MID',a:24,c:'Chelsea',l:'英超',r:4.0},
+    {n:'Pervis Estupiñán',cn:'埃斯图皮尼安',p:'DEF',a:28,c:'Brighton',l:'英超',r:3.5},
+    {n:'Enner Valencia',cn:'瓦伦西亚',p:'FWD',a:36,c:'Internacional',l:'巴甲',r:3.5},
+    {n:'Kendry Páez',cn:'派斯',p:'MID',a:19,c:'Independiente del Valle',l:'厄甲',r:3.5},
+    {n:'Alan Franco',cn:'弗朗哥',p:'MID',a:27,c:'São Paulo',l:'巴甲',r:3.0},
+    {n:'John Yeboah',cn:'耶博阿',p:'MID',a:25,c:'Raków Częstochowa',l:'波超',r:2.5},
+    {n:'William Pacho',cn:'帕乔',p:'DEF',a:24,c:'Eintracht Frankfurt',l:'德甲',r:3.5},
+    {n:'Félix Torres',cn:'托雷斯',p:'DEF',a:29,c:'Santos',l:'巴甲',r:3.0},
+    {n:'Pieros Sotiriou',cn:'索蒂里乌',p:'FWD',a:33,c:'San Luis',l:'墨超',r:2.5},
+    // Actually Sotiriou is Cypriot, let me use Ecuadorian players
+    {n:'Jordy Caicedo',cn:'凯塞多',p:'FWD',a:28,c:'Atlas',l:'墨超',r:2.5},
+    {n:'Moisés Ramírez',cn:'拉米雷斯',p:'GK',a:25,c:'Independiente del Valle',l:'厄甲',r:2.5},
+    {n:'Ángelo Preciado',cn:'普雷西亚多',p:'DEF',a:28,c:'Sparta Prague',l:'捷甲',r:2.5},
+    {n:'Gonzalo Plata',cn:'普拉塔',p:'FWD',a:25,c:'Flamengo',l:'巴甲',r:3.0},
+    {n:'José Cifuentes',cn:'西富恩特斯',p:'MID',a:27,c:'Cruz Azul',l:'墨超',r:2.5}
+  ],
+
+
+
+  'Netherlands': [
+    {n:'Virgil van Dijk',cn:'范迪克',p:'DEF',a:34,c:'Liverpool',l:'英超',r:4.5},
+    {n:'Frenkie de Jong',cn:'德容',p:'MID',a:29,c:'Barcelona',l:'西甲',r:4.5},
+    {n:'Cody Gakpo',cn:'加克波',p:'FWD',a:27,c:'Liverpool',l:'英超',r:4.0},
+    {n:'Xavi Simons',cn:'西蒙斯',p:'MID',a:23,c:'RB Leipzig',l:'德甲',r:4.0},
+    {n:'Nathan Aké',cn:'阿克',p:'DEF',a:31,c:'Manchester City',l:'英超',r:4.0},
+    {n:'Denzel Dumfries',cn:'邓弗里斯',p:'DEF',a:30,c:'Inter Milan',l:'意甲',r:3.5},
+    {n:'Memphis Depay',cn:'德佩',p:'FWD',a:32,c:'Atlético Madrid',l:'西甲',r:4.0},
+    {n:'Mats Wieffer',cn:'维弗尔',p:'MID',a:26,c:'Feyenoord',l:'荷甲',r:3.5},
+    {n:'Tijjani Reijnders',cn:'赖因德斯',p:'MID',a:27,c:'AC Milan',l:'意甲',r:3.5},
+    {n:'Bart Verbruggen',cn:'费布吕亨',p:'GK',a:23,c:'Brighton',l:'英超',r:3.5},
+    {n:'Jurriën Timber',cn:'廷贝尔',p:'DEF',a:25,c:'Arsenal',l:'英超',r:4.0},
+    {n:'Daley Blind',cn:'布林德',p:'DEF',a:36,c:'Girona',l:'西甲',r:3.0},
+    {n:'Brian Brobbey',cn:'布罗贝',p:'FWD',a:24,c:'Ajax',l:'荷甲',r:3.5},
+    {n:'Joël Veltman',cn:'费尔特曼',p:'DEF',a:34,c:'Brighton',l:'英超',r:3.0}
+  ],
+
+  'Japan': [
+    {n:'Takefusa Kubo',cn:'久保建英',p:'FWD',a:25,c:'Real Sociedad',l:'西甲',r:4.0},
+    {n:'Kaoru Mitoma',cn:'三笘薰',p:'MID',a:29,c:'Brighton',l:'英超',r:4.0},
+    {n:'Daichi Kamada',cn:'镰田大地',p:'MID',a:29,c:'Crystal Palace',l:'英超',r:3.5},
+    {n:'Wataru Endo',cn:'远藤航',p:'MID',a:33,c:'Liverpool',l:'英超',r:3.5},
+    {n:'Takehiro Tomiyasu',cn:'富安健洋',p:'DEF',a:27,c:'Arsenal',l:'英超',r:3.5},
+    {n:'Hiroki Itō',cn:'伊藤洋辉',p:'DEF',a:27,c:'VfB Stuttgart',l:'德甲',r:3.5},
+    {n:'Ritsu Dōan',cn:'堂安律',p:'MID',a:28,c:'Freiburg',l:'德甲',r:3.5},
+    {n:'Ao Tanaka',cn:'田中碧',p:'MID',a:27,c:'Leeds United',l:'英冠',r:3.0},
+    {n:'Kyōgo Furuhashi',cn:'古桥亨梧',p:'FWD',a:31,c:'Celtic',l:'苏超',r:3.5},
+    {n:'Kō Itakura',cn:'板仓滉',p:'DEF',a:29,c:'Borussia Mönchengladbach',l:'德甲',r:3.5},
+    {n:'Zion Suzuki',cn:'铃木彩艳',p:'GK',a:23,c:'Parma',l:'意甲',r:2.5},
+    {n:'Yukinari Sugawara',cn:'菅原由势',p:'DEF',a:26,c:'AZ Alkmaar',l:'荷甲',r:3.0},
+    {n:'Keito Nakamura',cn:'中村敬斗',p:'FWD',a:25,c:'Stade Reims',l:'法甲',r:3.0},
+    {n:'Ayase Ueda',cn:'上田绮世',p:'FWD',a:27,c:'Feyenoord',l:'荷甲',r:3.0}
+  ],
+
+  'Sweden': [
+    {n:'Alexander Isak',cn:'伊萨克',p:'FWD',a:26,c:'Newcastle United',l:'英超',r:4.5},
+    {n:'Dejan Kulusevski',cn:'库卢塞夫斯基',p:'MID',a:26,c:'Tottenham',l:'英超',r:4.0},
+    {n:'Viktor Gyökeres',cn:'哲凯赖什',p:'FWD',a:28,c:'Sporting CP',l:'葡超',r:4.0},
+    {n:'Emil Forsberg',cn:'福斯贝里',p:'MID',a:34,c:'Leipzig',l:'德甲',r:3.5},
+    {n:'Victor Lindelöf',cn:'林德洛夫',p:'DEF',a:31,c:'Manchester United',l:'英超',r:3.5},
+    {n:'Robin Olsen',cn:'奥尔森',p:'GK',a:36,c:'Aston Villa',l:'英超',r:3.0},
+    {n:'Alexander Milosevic',cn:'米洛舍维奇',p:'DEF',a:34,c:'AIK',l:'瑞典超',r:2.5},
+    {n:'Hjalmar Ekdal',cn:'埃克达尔',p:'DEF',a:27,c:'Burnley',l:'英冠',r:2.5},
+    {n:'Jens Cajuste',cn:'卡尤斯特',p:'MID',a:26,c:'Napoli',l:'意甲',r:3.0},
+    {n:'Hugo Larsson',cn:'拉尔森',p:'MID',a:22,c:'Eintracht Frankfurt',l:'德甲',r:3.0},
+    {n:'Ken Sema',cn:'塞玛',p:'MID',a:32,c:'Watford',l:'英冠',r:2.5},
+    {n:'Anthony Elanga',cn:'埃兰加',p:'FWD',a:24,c:'Nottingham Forest',l:'英超',r:3.0},
+    {n:'Ludvig Augustinsson',cn:'奥古斯丁松',p:'DEF',a:32,c:'Anderlecht',l:'比甲',r:2.5},
+    {n:'Kasper Lindqvist',cn:'林德奎斯特',p:'GK',a:29,c:'BK Häcken',l:'瑞典超',r:2.0}
+  ],
+
+  'Tunisia': [
+    {n:'Wahbi Khazri',cn:'哈兹里',p:'FWD',a:35,c:'Montpellier',l:'法甲',r:3.0},
+    {n:'Ellyes Skhiri',cn:'斯希里',p:'MID',a:31,c:'Eintracht Frankfurt',l:'德甲',r:3.5},
+    {n:'Ali Abdi',cn:'阿布迪',p:'DEF',a:32,c:'OGC Nice',l:'法甲',r:3.0},
+    {n:'Aïssa Laïdouni',cn:'莱杜尼',p:'MID',a:29,c:'Al-Wakrah',l:'卡塔尔联',r:3.0},
+    {n:'Youssef Msakni',cn:'姆萨克尼',p:'FWD',a:35,c:'Al-Arabi',l:'卡塔尔联',r:3.0},
+    {n:'Dylan Bronn',cn:'布龙',p:'DEF',a:30,c:'Servette',l:'瑞士超',r:2.5},
+    {n:'Mohamed Drager',cn:'德拉格',p:'DEF',a:29,c:'Oud-Heverlee Leuven',l:'比甲',r:2.5},
+    {n:'Haythem Jouini',cn:'朱伊尼',p:'FWD',a:33,c:'Stade Tunisien',l:'突甲',r:2.5},
+    {n:'Montassar Talbi',cn:'塔尔比',p:'DEF',a:28,c:'Lorient',l:'法甲',r:3.0},
+    {n:'Bechir Ben Saïd',cn:'本·赛义德',p:'GK',a:33,c:'Espérance',l:'突甲',r:2.5},
+    {n:'Naim Sliti',cn:'斯利蒂',p:'MID',a:33,c:'Al-Wakrah',l:'卡塔尔联',r:2.5},
+    {n:'Hamza Mathlouthi',cn:'马特卢蒂',p:'DEF',a:33,c:'Zamalek',l:'埃超',r:2.5},
+    {n:'Firas Ben Larbi',cn:'本·拉尔比',p:'FWD',a:30,c:'Espérance',l:'突甲',r:2.5},
+    {n:'Achraf Ben Sghaier',cn:'本·斯盖尔',p:'GK',a:25,c:'US Monastir',l:'突甲',r:2.0}
+  ],
+
+
+
+  'Belgium': [
+    {n:'Kevin De Bruyne',cn:'德布劳内',p:'MID',a:34,c:'Manchester City',l:'英超',r:5.0},
+    {n:'Romelu Lukaku',cn:'卢卡库',p:'FWD',a:33,c:'AS Roma',l:'意甲',r:4.0},
+    {n:'Jeremy Doku',cn:'多库',p:'FWD',a:24,c:'Manchester City',l:'英超',r:4.0},
+    {n:'Youri Tielemans',cn:'蒂勒曼斯',p:'MID',a:29,c:'Aston Villa',l:'英超',r:3.5},
+    {n:'Leandro Trossard',cn:'特罗萨德',p:'FWD',a:31,c:'Arsenal',l:'英超',r:3.5},
+    {n:'Jan Vertonghen',cn:'维尔通亨',p:'DEF',a:39,c:'Anderlecht',l:'比甲',r:3.5},
+    {n:'Arthur Theate',cn:'蒂特',p:'DEF',a:26,c:'Rennes',l:'法甲',r:3.5},
+    {n:'Wout Faes',cn:'费斯',p:'DEF',a:28,c:'Leicester City',l:'英冠',r:3.0},
+    {n:'Timothy Castagne',cn:'卡斯塔涅',p:'DEF',a:30,c:'Fulham',l:'英超',r:3.0},
+    {n:'Orel Mangala',cn:'曼加拉',p:'MID',a:28,c:'Everton',l:'英超',r:3.0},
+    {n:'Amadou Onana',cn:'奥纳纳',p:'MID',a:24,c:'Aston Villa',l:'英超',r:3.5},
+    {n:'Thibaut Courtois',cn:'库尔图瓦',p:'GK',a:34,c:'Real Madrid',l:'西甲',r:5.0},
+    {n:'Lois Openda',cn:'奥彭达',p:'FWD',a:26,c:'RB Leipzig',l:'德甲',r:3.5},
+    {n:'Zeno Debast',cn:'德巴斯特',p:'DEF',a:22,c:'Sporting CP',l:'葡超',r:3.0}
+  ],
+
+  'Egypt': [
+    {n:'Mohamed Salah',cn:'萨拉赫',p:'FWD',a:33,c:'Liverpool',l:'英超',r:4.5},
+    {n:'Mohamed Elneny',cn:'埃尔内尼',p:'MID',a:34,c:'Arsenal',l:'英超',r:3.0},
+    {n:'Mahmoud Trezeguet',cn:'特雷泽盖',p:'MID',a:31,c:'Al-Rayyan',l:'卡塔尔联',r:3.0},
+    {n:'Mostafa Mohamed',cn:'穆罕默德',p:'FWD',a:28,c:'Nantes',l:'法甲',r:3.0},
+    {n:'Omar Marmoush',cn:'马尔穆什',p:'FWD',a:27,c:'Eintracht Frankfurt',l:'德甲',r:3.5},
+    {n:'Mohamed Abdelmonem',cn:'阿卜杜勒莫奈姆',p:'DEF',a:27,c:'Al-Ahly',l:'埃超',r:3.0},
+    {n:'Emam Ashour',cn:'阿舒尔',p:'MID',a:28,c:'Al-Ahly',l:'埃超',r:2.5},
+    {n:'Ahmed Hegazi',cn:'赫加齐',p:'DEF',a:35,c:'Al-Ittihad',l:'沙特联',r:3.0},
+    {n:'Mohamed Hamdy',cn:'哈姆迪',p:'DEF',a:31,c:'Pyramids',l:'埃超',r:2.5},
+    {n:'Mohamed El Shenawy',cn:'埃尔舍纳维',p:'GK',a:37,c:'Al-Ahly',l:'埃超',r:3.5},
+    {n:'Marwan Attia',cn:'阿提亚',p:'MID',a:27,c:'Al-Ahly',l:'埃超',r:2.5},
+    {n:'Hussein El Shahat',cn:'埃尔沙哈特',p:'MID',a:34,c:'Al-Ahly',l:'埃超',r:2.5},
+    {n:'Ahmed Samy',cn:'萨米',p:'DEF',a:28,c:'Pyramids',l:'埃超',r:2.0},
+    {n:'Zizo',cn:'齐佐',p:'MID',a:30,c:'Zamalek',l:'埃超',r:2.5}
+  ],
+
+  'Iran': [
+    {n:'Mehdi Taremi',cn:'塔雷米',p:'FWD',a:33,c:'Inter Milan',l:'意甲',r:4.0},
+    {n:'Sardar Azmoun',cn:'阿兹蒙',p:'FWD',a:31,c:'Bayer Leverkusen',l:'德甲',r:3.5},
+    {n:'Alireza Jahanbakhsh',cn:'贾汉巴赫什',p:'MID',a:32,c:'Feyenoord',l:'荷甲',r:3.0},
+    {n:'Saman Ghoddos',cn:'戈多斯',p:'MID',a:32,c:'Brentford',l:'英超',r:2.5},
+    {n:'Ali Gholizadeh',cn:'戈利扎德',p:'MID',a:30,c:'Lech Poznań',l:'波超',r:2.5},
+    {n:'Saeid Ezatolahi',cn:'埃扎托拉希',p:'MID',a:29,c:'Al-Wehda',l:'沙特联',r:2.5},
+    {n:'Majid Hosseini',cn:'侯赛尼',p:'DEF',a:30,c:'Kaygusuzu',l:'土超',r:2.5},
+    {n:'Ramin Rezaeian',cn:'雷扎伊安',p:'DEF',a:36,c:'Sepahan',l:'伊朗超',r:2.5},
+    {n:'Hossein Kanaanizadegan',cn:'卡纳尼扎德甘',p:'DEF',a:32,c:'Al-Ahli',l:'卡塔尔联',r:2.5},
+    {n:'Mohammad Daneshegar',cn:'达内什加',p:'GK',a:32,c:'Esteghlal',l:'伊朗超',r:2.5},
+    {n:'Payman Niazmand',cn:'尼亚兹曼德',p:'GK',a:32,c:'Sepahan',l:'伊朗超',r:2.5},
+    {n:'Milad Mohammadi',cn:'穆罕默迪',p:'DEF',a:32,c:'AEK Athens',l:'希超',r:2.5},
+    {n:'Mohammad Mohebi',cn:'穆赫比',p:'FWD',a:27,c:'Rostov',l:'俄超',r:2.5},
+    {n:'Omid Noorafkan',cn:'努拉夫坎',p:'MID',a:29,c:'Malavan',l:'伊朗超',r:2.0}
+  ],
+
+  'New Zealand': [
+    {n:'Chris Wood',cn:'伍德',p:'FWD',a:34,c:'Nottingham Forest',l:'英超',r:3.5},
+    {n:'Liberato Cacace',cn:'卡卡切',p:'DEF',a:25,c:'Empoli',l:'意甲',r:2.5},
+    {n:'Joe Bell',cn:'贝尔',p:'MID',a:27,c:'Viking',l:'挪超',r:2.5},
+    {n:'Matthew Garbett',cn:'加贝特',p:'MID',a:24,c:'Bordeaux',l:'法乙',r:2.0},
+    {n:'Marko Stamenić',cn:'斯塔梅尼奇',p:'MID',a:24,c:'Nottingham Forest',l:'英超',r:2.5},
+    {n:'Nando Pijnaker',cn:'派纳克',p:'DEF',a:27,c:'Grasshoppers',l:'瑞士超',r:2.0},
+    {n:'Michael Boxall',cn:'博克萨尔',p:'DEF',a:37,c:'Minnesota United',l:'美职联',r:2.5},
+    {n:'Tommy Smith',cn:'史密斯',p:'DEF',a:36,c:'Macarthur FC',l:'澳超',r:2.5},
+    {n:'Oli Sail',cn:'赛尔',p:'GK',a:30,c:'Perth Glory',l:'澳超',r:2.5},
+    {n:'Alex Greive',cn:'格里夫',p:'FWD',a:27,c:'Auckland FC',l:'澳超',r:2.0},
+    {n:'Ben Waine',cn:'韦恩',p:'FWD',a:24,c:'Portsmouth',l:'英甲',r:2.0},
+    {n:'Finn Surman',cn:'苏尔曼',p:'DEF',a:22,c:'Wellington Phoenix',l:'澳超',r:2.0},
+    {n:'Tim Payne',cn:'佩恩',p:'DEF',a:32,c:'Wellington Phoenix',l:'澳超',r:2.0},
+    {n:'Max Crocombe',cn:'克罗科姆',p:'GK',a:32,c:'Burton Albion',l:'英甲',r:2.0}
+  ],
+
+
+
+  'Spain': [
+    {n:'Rodri',cn:'罗德里',p:'MID',a:30,c:'Manchester City',l:'英超',r:5.0},
+    {n:'Lamine Yamal',cn:'亚马尔',p:'FWD',a:18,c:'Barcelona',l:'西甲',r:4.5},
+    {n:'Pedri',cn:'佩德里',p:'MID',a:23,c:'Barcelona',l:'西甲',r:4.5},
+    {n:'Gavi',cn:'加维',p:'MID',a:21,c:'Barcelona',l:'西甲',r:4.0},
+    {n:'Nico Williams',cn:'尼科·威廉姆斯',p:'FWD',a:23,c:'Athletic Bilbao',l:'西甲',r:4.0},
+    {n:'Dani Olmo',cn:'奥尔莫',p:'MID',a:28,c:'RB Leipzig',l:'德甲',r:4.0},
+    {n:'Aymeric Laporte',cn:'拉波尔特',p:'DEF',a:32,c:'Al-Nassr',l:'沙特联',r:4.0},
+    {n:'Pau Torres',cn:'保·托雷斯',p:'DEF',a:29,c:'Aston Villa',l:'英超',r:3.5},
+    {n:'Unai Simón',cn:'乌奈·西蒙',p:'GK',a:29,c:'Athletic Bilbao',l:'西甲',r:4.0},
+    {n:'Joselu',cn:'何塞卢',p:'FWD',a:36,c:'Al-Gharafa',l:'卡塔尔联',r:3.5},
+    {n:'Mikel Oyarzabal',cn:'奥亚萨瓦尔',p:'FWD',a:29,c:'Real Sociedad',l:'西甲',r:3.5},
+    {n:'Marc Cucurella',cn:'库库雷利亚',p:'DEF',a:27,c:'Chelsea',l:'英超',r:3.5},
+    {n:'Dani Carvajal',cn:'卡瓦哈尔',p:'DEF',a:34,c:'Real Madrid',l:'西甲',r:3.5},
+    {n:'Fermín López',cn:'费尔明',p:'MID',a:23,c:'Barcelona',l:'西甲',r:3.5}
+  ],
+
+  'Cape Verde': [
+    {n:'Ryan Mendes',cn:'门德斯',p:'FWD',a:36,c:'Eyüpspor',l:'土超',r:2.5},
+    {n:'Jovane Cabral',cn:'卡布拉尔',p:'FWD',a:27,c:'Lazio',l:'意甲',r:2.5},
+    {n:'Garry Rodrigues',cn:'罗德里格斯',p:'FWD',a:35,c:'Ankaragücü',l:'土超',r:2.5},
+    {n:'Kevin Pina',cn:'皮纳',p:'MID',a:29,c:'Pafos FC',l:'塞浦甲',r:2.5},
+    {n:'Cuca Cocoricó',cn:'科科里科',p:'MID',a:27,c:'Farense',l:'葡超',r:2.0},
+    {n:'Roberto Lopes',cn:'洛佩斯',p:'DEF',a:33,c:'Shamrock Rovers',l:'爱超',r:2.5},
+    {n:'Stopira',cn:'斯托皮拉',p:'DEF',a:38,c:'Apollon Limassol',l:'塞浦甲',r:2.0},
+    {n:'João Paulo',cn:'若昂·保罗',p:'GK',a:30,c:'Dila Gori',l:'格鲁超',r:2.0},
+    {n:'Bebé',cn:'贝贝',p:'FWD',a:35,c:'Rayo Majadahonda',l:'西协甲',r:2.5},
+    {n:'Diney',cn:'迪内',p:'DEF',a:32,c:'Al-Orobah',l:'沙特甲',r:2.0},
+    {n:'Luis Carlos Almada',cn:'阿尔马达',p:'FWD',a:24,c:'Portimonense',l:'葡超',r:2.5},
+    // Almada is more on Argentina side... Let me use real Cape Verde players
+    {n:'Deroy Duarte',cn:'杜阿尔特',p:'MID',a:27,c:'Fortuna Sittard',l:'荷甲',r:2.5},
+    {n:'Carlos Ponck',cn:'蓬克',p:'DEF',a:31,c:'İstanbulspor',l:'土超',r:2.0},
+    {n:'Márcio Rosa',cn:'罗萨',p:'GK',a:26,c:'CD Fátima',l:'葡乙',r:2.0}
+  ],
+
+  'Saudi Arabia': [
+    {n:'Salem Al-Dawsari',cn:'多萨里',p:'FWD',a:34,c:'Al-Hilal',l:'沙特联',r:3.5},
+    {n:'Firas Al-Buraikan',cn:'布雷坎',p:'FWD',a:26,c:'Al-Ahli',l:'沙特联',r:3.0},
+    {n:'Mohamed Kanno',cn:'坎诺',p:'MID',a:31,c:'Al-Hilal',l:'沙特联',r:3.0},
+    {n:'Saud Abdulhamid',cn:'阿卜杜勒哈米德',p:'DEF',a:27,c:'Al-Hilal',l:'沙特联',r:3.0},
+    {n:'Ali Al-Bulaihi',cn:'布莱希',p:'DEF',a:36,c:'Al-Hilal',l:'沙特联',r:3.0},
+    {n:'Hassan Tambakti',cn:'坦巴克蒂',p:'DEF',a:27,c:'Al-Hilal',l:'沙特联',r:2.5},
+    {n:'Sultan Al-Ghannam',cn:'甘纳姆',p:'DEF',a:32,c:'Al-Nassr',l:'沙特联',r:2.5},
+    {n:'Nasser Al-Dawsari',cn:'多萨里',p:'MID',a:27,c:'Al-Hilal',l:'沙特联',r:2.5},
+    {n:'Abdullah Al-Hamdan',cn:'哈姆丹',p:'FWD',a:26,c:'Al-Hilal',l:'沙特联',r:2.5},
+    {n:'Yasser Al-Shahrani',cn:'沙赫拉尼',p:'DEF',a:34,c:'Al-Hilal',l:'沙特联',r:3.0},
+    {n:'Mohammed Al-Owais',cn:'奥韦斯',p:'GK',a:34,c:'Al-Hilal',l:'沙特联',r:3.0},
+    {n:'Ayman Yahya',cn:'叶海亚',p:'MID',a:25,c:'Al-Nassr',l:'沙特联',r:2.5},
+    {n:'Abdulrahman Ghareeb',cn:'加里卜',p:'MID',a:28,c:'Al-Nassr',l:'沙特联',r:2.5},
+    {n:'Ahmed Baalah',cn:'巴拉赫',p:'GK',a:29,c:'Al-Shabab',l:'沙特联',r:2.0}
+  ],
+
+  'Uruguay': [
+    {n:'Federico Valverde',cn:'巴尔韦德',p:'MID',a:27,c:'Real Madrid',l:'西甲',r:4.5},
+    {n:'Darwin Núñez',cn:'努涅斯',p:'FWD',a:27,c:'Liverpool',l:'英超',r:4.0},
+    {n:'Rodrigo Bentancur',cn:'本坦库尔',p:'MID',a:29,c:'Tottenham',l:'英超',r:3.5},
+    {n:'Manuel Ugarte',cn:'乌加特',p:'MID',a:25,c:'PSG',l:'法甲',r:3.5},
+    {n:'Ronald Araújo',cn:'阿劳霍',p:'DEF',a:27,c:'Barcelona',l:'西甲',r:4.5},
+    {n:'José María Giménez',cn:'希门尼斯',p:'DEF',a:31,c:'Atlético Madrid',l:'西甲',r:4.0},
+    {n:'Mathías Olivera',cn:'奥利维拉',p:'DEF',a:28,c:'Napoli',l:'意甲',r:3.5},
+    {n:'Facundo Pellistri',cn:'佩利斯特里',p:'MID',a:24,c:'Manchester United',l:'英超',r:3.0},
+    {n:'Sergio Rochet',cn:'罗切特',p:'GK',a:33,c:'Internacional',l:'巴甲',r:3.5},
+    {n:'Nahitan Nández',cn:'南德斯',p:'MID',a:30,c:'Cagliari',l:'意甲',r:3.0},
+    {n:'Federico Viñas',cn:'维尼亚斯',p:'FWD',a:27,c:'Lecce',l:'意甲',r:2.5},
+    {n:'Maximiliano Araújo',cn:'阿拉乌霍',p:'FWD',a:26,c:'Sporting Gijón',l:'西乙',r:2.5},
+    {n:'Sebastián Cáceres',cn:'卡塞雷斯',p:'DEF',a:26,c:'América',l:'墨超',r:3.0},
+    {n:'Juan Manuel Sanabria',cn:'萨纳夫里亚',p:'MID',a:25,c:'Atlético Madrid B',l:'西协甲',r:2.5}
+  ],
+
+
+
+  'France': [
+    {n:'Kylian Mbappé',cn:'姆巴佩',p:'FWD',a:27,c:'Real Madrid',l:'西甲',r:5.0},
+    {n:'Antoine Griezmann',cn:'格列兹曼',p:'FWD',a:35,c:'Atlético Madrid',l:'西甲',r:4.0},
+    {n:'Eduardo Camavinga',cn:'卡马文加',p:'MID',a:23,c:'Real Madrid',l:'西甲',r:4.0},
+    {n:'Aurélien Tchouaméni',cn:'楚阿梅尼',p:'MID',a:26,c:'Real Madrid',l:'西甲',r:4.0},
+    {n:'Warren Zaïre-Emery',cn:'扎伊尔-埃梅里',p:'MID',a:20,c:'PSG',l:'法甲',r:3.5},
+    {n:'William Saliba',cn:'萨利巴',p:'DEF',a:25,c:'Arsenal',l:'英超',r:4.0},
+    {n:'Dayot Upamecano',cn:'于帕梅卡诺',p:'DEF',a:27,c:'Bayern Munich',l:'德甲',r:3.5},
+    {n:'Theo Hernandez',cn:'特奥·埃尔南德斯',p:'DEF',a:28,c:'AC Milan',l:'意甲',r:4.0},
+    {n:'Jules Koundé',cn:'孔德',p:'DEF',a:27,c:'Barcelona',l:'西甲',r:4.0},
+    {n:'Ousmane Dembélé',cn:'登贝莱',p:'FWD',a:29,c:'PSG',l:'法甲',r:4.0},
+    {n:'Mike Maignan',cn:'迈尼昂',p:'GK',a:30,c:'AC Milan',l:'意甲',r:4.5},
+    {n:'Marcus Thuram',cn:'图拉姆',p:'FWD',a:28,c:'Inter Milan',l:'意甲',r:3.5},
+    {n:'Adrien Rabiot',cn:'拉比奥',p:'MID',a:31,c:'Juventus',l:'意甲',r:3.5},
+    {n:'Randal Kolo Muani',cn:'科洛·穆阿尼',p:'FWD',a:27,c:'PSG',l:'法甲',r:3.5}
+  ],
+
+  'Senegal': [
+    {n:'Sadio Mané',cn:'马内',p:'FWD',a:34,c:'Al-Nassr',l:'沙特联',r:4.0},
+    {n:'Kalidou Koulibaly',cn:'库利巴利',p:'DEF',a:35,c:'Al-Hilal',l:'沙特联',r:3.5},
+    {n:'Ismaïla Sarr',cn:'萨尔',p:'FWD',a:28,c:'Marseille',l:'法甲',r:3.5},
+    {n:'Idrissa Gueye',cn:'盖耶',p:'MID',a:36,c:'Everton',l:'英超',r:3.0},
+    {n:'Pape Matar Sarr',cn:'帕普·萨尔',p:'MID',a:23,c:'Tottenham',l:'英超',r:3.5},
+    {n:'Nampalys Mendy',cn:'门迪',p:'MID',a:34,c:'Leicester City',l:'英冠',r:2.5},
+    {n:'Abdou Diallo',cn:'阿卜杜·迪亚洛',p:'DEF',a:30,c:'Al-Arabi',l:'卡塔尔联',r:3.0},
+    {n:'Édouard Mendy',cn:'门迪',p:'GK',a:34,c:'Al-Ahli',l:'沙特联',r:3.5},
+    {n:'Nicolas Jackson',cn:'杰克逊',p:'FWD',a:25,c:'Chelsea',l:'英超',r:3.5},
+    {n:'Boulaye Dia',cn:'迪亚',p:'FWD',a:29,c:'Lazio',l:'意甲',r:3.0},
+    {n:'Cheikhou Kouyaté',cn:'库亚特',p:'MID',a:36,c:'Crystal Palace',l:'英超',r:2.5},
+    {n:'Moussa Niakhaté',cn:'尼亚卡特',p:'DEF',a:30,c:'Nottingham Forest',l:'英超',r:3.0},
+    {n:'Ahmadou Bamba Dieng',cn:'迪恩',p:'FWD',a:26,c:'Marseille',l:'法甲',r:2.5},
+    {n:'Habib Diallo',cn:'迪亚洛',p:'FWD',a:32,c:'Damac',l:'沙特联',r:2.5}
+  ],
+
+  'Iraq': [
+    {n:'Mohamed Al-Hardan',cn:'阿尔哈丹',p:'MID',a:29,c:'Al-Riffa',l:'巴林超',r:2.5},
+    {n:'Aymen Hussein',cn:'侯赛因',p:'FWD',a:30,c:'Al-Quwa Al-Jawiya',l:'伊拉克超',r:2.5},
+    {n:'Ali Adnan',cn:'阿里·阿德南',p:'DEF',a:32,c:'Al-Minaa',l:'伊拉克超',r:2.5},
+    {n:'Safaa Hadi',cn:'哈迪',p:'MID',a:27,c:'Al-Quwa Al-Jawiya',l:'伊拉克超',r:2.5},
+    {n:'Ibrahim Bayesh',cn:'巴耶什',p:'MID',a:26,c:'Al-Quwa Al-Jawiya',l:'伊拉克超',r:2.5},
+    {n:'Jalal Hassan',cn:'哈桑',p:'GK',a:35,c:'Al-Zawraa',l:'伊拉克超',r:2.5},
+    {n:'Mustafa Nadhim',cn:'纳迪姆',p:'DEF',a:31,c:'Al-Khor',l:'卡塔尔联',r:2.0},
+    {n:'Hussein Ali',cn:'侯赛因·阿里',p:'DEF',a:30,c:'Al-Wehda',l:'沙特联',r:2.5},
+    {n:'Ali Al-Hamadi',cn:'阿尔哈马迪',p:'FWD',a:24,c:'Ipswich Town',l:'英冠',r:2.5},
+    {n:'Amir Al-Ammari',cn:'阿尔阿马里',p:'MID',a:28,c:'Halmstads BK',l:'瑞典超',r:2.0},
+    {n:'Mohanad Ali',cn:'莫哈纳德·阿里',p:'FWD',a:26,c:'Al-Quwa Al-Jawiya',l:'伊拉克超',r:2.5},
+    {n:'Omar Al-Mukhtar',cn:'穆赫塔尔',p:'DEF',a:26,c:'Naft Al-Wasat',l:'伊拉克超',r:2.0},
+    {n:'Ahmed Basil',cn:'巴西尔',p:'GK',a:29,c:'Al-Shorta',l:'伊拉克超',r:2.0},
+    {n:'Youssef Amyn',cn:'阿明',p:'MID',a:22,c:'Eintracht Braunschweig',l:'德乙',r:2.5}
+  ],
+
+  'Norway': [
+    {n:'Erling Haaland',cn:'哈兰德',p:'FWD',a:25,c:'Manchester City',l:'英超',r:5.0},
+    {n:'Martin Ødegaard',cn:'厄德高',p:'MID',a:27,c:'Arsenal',l:'英超',r:4.5},
+    {n:'Alexander Sørloth',cn:'索尔洛特',p:'FWD',a:30,c:'Villarreal',l:'西甲',r:3.5},
+    {n:'Oscar Bobb',cn:'博布',p:'MID',a:22,c:'Manchester City',l:'英超',r:3.5},
+    {n:'Sander Berge',cn:'贝格',p:'MID',a:28,c:'Burnley',l:'英冠',r:3.0},
+    {n:'Kristoffer Ajer',cn:'阿热',p:'DEF',a:28,c:'Brentford',l:'英超',r:3.0},
+    {n:'Leo Østigård',cn:'厄斯蒂高',p:'DEF',a:26,c:'Napoli',l:'意甲',r:3.0},
+    {n:'Morten Thorsby',cn:'托尔斯比',p:'MID',a:30,c:'Genoa',l:'意甲',r:2.5},
+    {n:'Johan Hove',cn:'霍韦',p:'MID',a:25,c:'Groningen',l:'荷甲',r:2.5},
+    {n:'Antonio Nusa',cn:'努萨',p:'FWD',a:21,c:'RB Leipzig',l:'德甲',r:3.5},
+    {n:'Fredrik André Bjørkan',cn:'比约坎',p:'DEF',a:27,c:'FK Bodø/Glimt',l:'挪超',r:2.5},
+    {n:'Ørjan Nyland',cn:'尼兰',p:'GK',a:35,c:'RB Leipzig',l:'德甲',r:2.5},
+    {n:'Jørgen Strand Larsen',cn:'拉森',p:'FWD',a:26,c:'Celta Vigo',l:'西甲',r:3.0},
+    {n:'David Møller Wolfe',cn:'沃尔夫',p:'DEF',a:24,c:'AZ Alkmaar',l:'荷甲',r:2.5}
+  ],
+
+
+
+  'Argentina': [
+    {n:'Lionel Messi',cn:'梅西',p:'FWD',a:38,c:'Inter Miami',l:'美职联',r:5.0},
+    {n:'Julián Álvarez',cn:'阿尔瓦雷斯',p:'FWD',a:26,c:'Manchester City',l:'英超',r:4.5},
+    {n:'Enzo Fernández',cn:'恩佐·费尔南德斯',p:'MID',a:25,c:'Chelsea',l:'英超',r:4.0},
+    {n:'Alexis Mac Allister',cn:'麦卡利斯特',p:'MID',a:27,c:'Liverpool',l:'英超',r:4.0},
+    {n:'Rodrigo De Paul',cn:'德保罗',p:'MID',a:32,c:'Atlético Madrid',l:'西甲',r:4.0},
+    {n:'Cristian Romero',cn:'罗梅罗',p:'DEF',a:28,c:'Tottenham',l:'英超',r:4.0},
+    {n:'Nicolás Otamendi',cn:'奥塔门迪',p:'DEF',a:38,c:'Benfica',l:'葡超',r:3.5},
+    {n:'Nahuel Molina',cn:'莫利纳',p:'DEF',a:28,c:'Atlético Madrid',l:'西甲',r:3.5},
+    {n:'Emiliano Martínez',cn:'马丁内斯',p:'GK',a:33,c:'Aston Villa',l:'英超',r:4.5},
+    {n:'Lautaro Martínez',cn:'劳塔罗',p:'FWD',a:28,c:'Inter Milan',l:'意甲',r:4.0},
+    {n:'Nicolás González',cn:'尼古拉斯·冈萨雷斯',p:'FWD',a:28,c:'Fiorentina',l:'意甲',r:3.5},
+    {n:'Leandro Paredes',cn:'帕雷德斯',p:'MID',a:32,c:'AS Roma',l:'意甲',r:3.0},
+    {n:'Germán Pezzella',cn:'佩泽拉',p:'DEF',a:35,c:'Betis',l:'西甲',r:3.0},
+    {n:'Alejandro Garnacho',cn:'加纳乔',p:'FWD',a:21,c:'Manchester United',l:'英超',r:3.5}
+  ],
+
+  'Algeria': [
+    {n:'Riyad Mahrez',cn:'马赫雷斯',p:'FWD',a:35,c:'Al-Ahli',l:'沙特联',r:4.0},
+    {n:'Ramy Bensebaini',cn:'本塞拜尼',p:'DEF',a:31,c:'Borussia Dortmund',l:'德甲',r:3.5},
+    {n:'Ismaël Bennacer',cn:'本纳赛尔',p:'MID',a:28,c:'AC Milan',l:'意甲',r:4.0},
+    {n:'Sofiane Feghouli',cn:'费古利',p:'MID',a:36,c:'Fatih Karagümrük',l:'土超',r:3.0},
+    {n:'Islam Slimani',cn:'斯利马尼',p:'FWD',a:38,c:'Coritiba',l:'巴甲',r:3.0},
+    {n:'Youcef Belaïli',cn:'贝莱利',p:'MID',a:34,c:'MC Alger',l:'阿尔甲',r:2.5},
+    {n:'Aïssa Mandi',cn:'曼迪',p:'DEF',a:34,c:'Lille',l:'法甲',r:3.0},
+    {n:'Houssem Aouar',cn:'奥亚尔',p:'MID',a:27,c:'Al-Ittihad',l:'沙特联',r:3.5},
+    {n:'Amine Gouiri',cn:'古伊里',p:'FWD',a:26,c:'Rennes',l:'法甲',r:3.5},
+    {n:'Mohamed Amoura',cn:'阿穆拉',p:'FWD',a:26,c:'Lugano',l:'瑞士超',r:3.0},
+    {n:'Rayan Aït-Nouri',cn:'艾特-努里',p:'DEF',a:25,c:'Wolves',l:'英超',r:3.5},
+    {n:'Anthony Mandrea',cn:'曼德雷亚',p:'GK',a:29,c:'Angers',l:'法甲',r:2.5},
+    {n:'Adam Ounas',cn:'欧纳斯',p:'FWD',a:29,c:'Lille',l:'法甲',r:3.0},
+    {n:'Nabil Bentaleb',cn:'本塔勒布',p:'MID',a:31,c:'Lille',l:'法甲',r:2.5}
+  ],
+
+  'Austria': [
+    {n:'David Alaba',cn:'阿拉巴',p:'DEF',a:34,c:'Real Madrid',l:'西甲',r:4.5},
+    {n:'Marcel Sabitzer',cn:'萨比策',p:'MID',a:32,c:'Borussia Dortmund',l:'德甲',r:3.5},
+    {n:'Christoph Baumgartner',cn:'鲍姆加特纳',p:'MID',a:26,c:'RB Leipzig',l:'德甲',r:3.5},
+    {n:'Konrad Laimer',cn:'莱默尔',p:'MID',a:29,c:'Bayern Munich',l:'德甲',r:3.5},
+    {n:'Marko Arnautović',cn:'阿瑙托维奇',p:'FWD',a:37,c:'Inter Milan',l:'意甲',r:3.5},
+    {n:'Xaver Schlager',cn:'施拉格尔',p:'MID',a:28,c:'RB Leipzig',l:'德甲',r:3.5},
+    {n:'Stefan Posch',cn:'波施',p:'DEF',a:29,c:'Bologna',l:'意甲',r:3.0},
+    {n:'Philipp Lienhart',cn:'林哈特',p:'DEF',a:29,c:'SC Freiburg',l:'德甲',r:3.0},
+    {n:'Michael Gregoritsch',cn:'格雷戈里奇',p:'FWD',a:32,c:'SC Freiburg',l:'德甲',r:3.0},
+    {n:'Florian Grillitsch',cn:'格里利奇',p:'MID',a:30,c:'TSG Hoffenheim',l:'德甲',r:2.5},
+    {n:'Patrick Pentz',cn:'彭茨',p:'GK',a:29,c:'Lens',l:'法甲',r:2.5},
+    {n:'Aleksandar Dragović',cn:'德拉戈维奇',p:'DEF',a:35,c:'Red Star Belgrade',l:'塞超',r:2.5},
+    {n:'Karim Onisiwo',cn:'奥尼西沃',p:'FWD',a:34,c:'Mainz',l:'德甲',r:2.5},
+    {n:'Nicolas Seiwald',cn:'赛沃尔德',p:'MID',a:25,c:'RB Leipzig',l:'德甲',r:3.0}
+  ],
+
+  'Jordan': [
+    {n:'Musa Al-Taamari',cn:'塔马里',p:'FWD',a:29,c:'Montpellier',l:'法甲',r:3.0},
+    {n:'Ali Olwan',cn:'奥尔万',p:'FWD',a:26,c:'Al-Shorta',l:'伊拉克超',r:2.5},
+    {n:'Yazan Al-Naimat',cn:'纳伊马特',p:'FWD',a:27,c:'Al-Ahli',l:'卡塔尔联',r:2.5},
+    {n:'Nizar Al-Rashdan',cn:'拉什丹',p:'MID',a:27,c:'Al-Faisaly',l:'约旦超',r:2.5},
+    {n:'Mahmoud Al-Mardi',cn:'马尔迪',p:'MID',a:29,c:'Al-Hussein',l:'约旦超',r:2.5},
+    {n:'Ihsan Haddad',cn:'哈达德',p:'DEF',a:32,c:'Al-Faisaly',l:'约旦超',r:2.5},
+    {n:'Abdallah Nasib',cn:'纳西卜',p:'DEF',a:32,c:'Al-Hussein',l:'约旦超',r:2.5},
+    {n:'Youssef Abuljazar',cn:'阿布贾扎尔',p:'MID',a:26,c:'Al-Shorta',l:'埃及超',r:2.0},
+    {n:'Yazan Abu Arab',cn:'阿布·阿拉伯',p:'DEF',a:30,c:'Al-Wahda',l:'阿联超',r:2.0},
+    {n:'Shojaa Al-Rashdan',cn:'拉什丹',p:'MID',a:30,c:'Al-Faisaly',l:'约旦超',r:2.0},
+    {n:'Yazeed Abulaila',cn:'阿布莱拉',p:'GK',a:33,c:'Al-Faisaly',l:'约旦超',r:2.5},
+    {n:'Ahmed Sariweh',cn:'萨里韦',p:'MID',a:26,c:'Al-Hussein',l:'约旦超',r:2.0},
+    {n:'Ehsan Al-Haddad',cn:'哈达德',p:'DEF',a:31,c:'Al-Faisaly',l:'约旦超',r:2.0},
+    {n:'Saleh Rateb',cn:'拉提卜',p:'GK',a:31,c:'Al-Wehdat',l:'约旦超',r:2.0}
+  ],
+
+
+
+  'Portugal': [
+    {n:'Cristiano Ronaldo',cn:'C罗',p:'FWD',a:41,c:'Al-Nassr',l:'沙特联',r:4.0},
+    {n:'Bernardo Silva',cn:'B席',p:'MID',a:31,c:'Manchester City',l:'英超',r:4.5},
+    {n:'Bruno Fernandes',cn:'B费',p:'MID',a:31,c:'Manchester United',l:'英超',r:4.5},
+    {n:'Rafael Leão',cn:'莱奥',p:'FWD',a:27,c:'AC Milan',l:'意甲',r:4.0},
+    {n:'Vitinha',cn:'维蒂尼亚',p:'MID',a:26,c:'PSG',l:'法甲',r:4.0},
+    {n:'João Palhinha',cn:'帕利尼亚',p:'MID',a:30,c:'Bayern Munich',l:'德甲',r:3.5},
+    {n:'Rúben Dias',cn:'迪亚斯',p:'DEF',a:29,c:'Manchester City',l:'英超',r:4.5},
+    {n:'Diogo Dalot',cn:'达洛特',p:'DEF',a:27,c:'Manchester United',l:'英超',r:3.5},
+    {n:'Nuno Mendes',cn:'努诺·门德斯',p:'DEF',a:24,c:'PSG',l:'法甲',r:3.5},
+    {n:'João Cancelo',cn:'坎塞洛',p:'DEF',a:32,c:'Barcelona',l:'西甲',r:3.5},
+    {n:'Diogo Costa',cn:'科斯塔',p:'GK',a:26,c:'Porto',l:'葡超',r:4.0},
+    {n:'Gonçalo Ramos',cn:'拉莫斯',p:'FWD',a:25,c:'PSG',l:'法甲',r:3.5},
+    {n:'João Félix',cn:'菲利克斯',p:'FWD',a:26,c:'Barcelona',l:'西甲',r:3.5},
+    {n:'Nuno Tavares',cn:'塔瓦雷斯',p:'DEF',a:26,c:'Lazio',l:'意甲',r:2.5}
+  ],
+
+  'Congo DR': [
+    {n:'Cédric Bakambu',cn:'巴坎布',p:'FWD',a:35,c:'Galatasaray',l:'土超',r:3.0},
+    {n:'Yoane Wissa',cn:'维萨',p:'FWD',a:29,c:'Brentford',l:'英超',r:3.5},
+    {n:'Arthur Masuaku',cn:'马苏阿库',p:'DEF',a:32,c:'Beşiktaş',l:'土超',r:3.0},
+    {n:'Chancel Mbemba',cn:'姆本巴',p:'DEF',a:31,c:'Marseille',l:'法甲',r:3.5},
+    {n:'Gaël Kakuta',cn:'卡库塔',p:'MID',a:35,c:'Amiens',l:'法乙',r:2.5},
+    {n:'Samuel Bastien',cn:'巴斯蒂安',p:'MID',a:29,c:'Casertana',l:'意丙',r:2.0},
+    {n:'Aaron Tshibola',cn:'奇博拉',p:'MID',a:31,c:'Akritas Chlorakas',l:'塞浦甲',r:2.0},
+    // Tshibola - let me check, more realistic options
+    {n:'Théo Bongonda',cn:'邦贡达',p:'FWD',a:30,c:'Spartak Moscow',l:'俄超',r:2.5},
+    {n:'Samuel Moutoussamy',cn:'穆图萨米',p:'MID',a:29,c:'Nantes',l:'法甲',r:2.5},
+    {n:'Dylan Batubinsika',cn:'巴图宾西卡',p:'DEF',a:30,c:'St. Pölten',l:'奥乙',r:2.0},
+    {n:'Lionel Mpasi',cn:'姆帕西',p:'GK',a:31,c:'Rodez',l:'法乙',r:2.0},
+    {n:'Silas Katompa Mvumpa',cn:'卡通帕',p:'FWD',a:27,c:'VfB Stuttgart',l:'德甲',r:3.0},
+    {n:'Joris Kayembe',cn:'卡延贝',p:'DEF',a:31,c:'Watford',l:'英冠',r:2.5},
+    {n:'Omenuke Mfulu',cn:'姆弗鲁',p:'MID',a:32,c:'Red Star Belgrade',l:'塞超',r:2.0}
+  ],
+
+  'Uzbekistan': [
+    {n:'Eldor Shomurodov',cn:'绍穆罗多夫',p:'FWD',a:30,c:'Cagliari',l:'意甲',r:3.0},
+    {n:'Oston Urunov',cn:'乌鲁诺夫',p:'MID',a:25,c:'Persepolis',l:'伊朗超',r:2.5},
+    {n:'Jaloliddin Masharipov',cn:'马沙里波夫',p:'MID',a:32,c:'Al-Nassr',l:'沙特联',r:2.5},
+    {n:'Odiljon Hamrobekov',cn:'哈姆罗别科夫',p:'MID',a:30,c:'Pakhtakor',l:'乌兹超',r:2.5},
+    {n:'Rustam Ashurmatov',cn:'阿舒尔马托夫',p:'DEF',a:29,c:'Rubin Kazan',l:'俄超',r:2.5},
+    {n:'Hojiakbar Alijonov',cn:'阿利约诺夫',p:'DEF',a:28,c:'Pakhtakor',l:'乌兹超',r:2.0},
+    {n:'Azizbek Turgunboev',cn:'图尔贡巴耶夫',p:'FWD',a:31,c:'Pakhtakor',l:'乌兹超',r:2.5},
+    {n:'Khojiakbar Khamdamov',cn:'哈姆达莫夫',p:'MID',a:29,c:'Al-Faisaly',l:'沙特甲',r:2.0},
+    {n:'Utkir Yusupov',cn:'优素波夫',p:'GK',a:35,c:'Navbahor',l:'乌兹超',r:2.5},
+    {n:'Abdulla Abdullaev',cn:'阿卜杜拉耶夫',p:'GK',a:28,c:'Pakhtakor',l:'乌兹超',r:2.0},
+    {n:'Sherzod Nasrullaev',cn:'纳斯鲁拉耶夫',p:'DEF',a:27,c:'Nasaf',l:'乌兹超',r:2.0},
+    {n:'Otabek Shukurov',cn:'舒库罗夫',p:'MID',a:29,c:'Al-Fayha',l:'沙特联',r:2.5},
+    {n:'Doston Ibragimov',cn:'伊布拉吉莫夫',p:'FWD',a:26,c:'Nasaf',l:'乌兹超',r:2.0},
+    {n:'Oybek Bozorov',cn:'博佐罗夫',p:'MID',a:28,c:'Pakhtakor',l:'乌兹超',r:2.0}
+  ],
+
+  'Colombia': [
+    {n:'Luis Díaz',cn:'迪亚斯',p:'FWD',a:29,c:'Liverpool',l:'英超',r:4.5},
+    {n:'James Rodríguez',cn:'J罗',p:'MID',a:34,c:'São Paulo',l:'巴甲',r:3.5},
+    {n:'Rafael Santos Borré',cn:'博雷',p:'FWD',a:30,c:'Internacional',l:'巴甲',r:3.5},
+    {n:'Jhon Arias',cn:'阿里亚斯',p:'MID',a:28,c:'Fluminense',l:'巴甲',r:3.5},
+    {n:'Wilmar Barrios',cn:'巴里奥斯',p:'MID',a:32,c:'Zenit',l:'俄超',r:3.0},
+    {n:'Dávinson Sánchez',cn:'桑切斯',p:'DEF',a:30,c:'Galatasaray',l:'土超',r:3.5},
+    {n:'Yerry Mina',cn:'米纳',p:'DEF',a:31,c:'Cagliari',l:'意甲',r:3.0},
+    {n:'Juan Cuadrado',cn:'夸德拉多',p:'MID',a:38,c:'Inter Milan',l:'意甲',r:3.0},
+    {n:'Daniel Muñoz',cn:'穆尼奥斯',p:'DEF',a:30,c:'Crystal Palace',l:'英超',r:3.0},
+    {n:'Luis Sinisterra',cn:'西尼斯特拉',p:'FWD',a:27,c:'Bournemouth',l:'英超',r:3.0},
+    {n:'Mateus Uribe',cn:'乌里韦',p:'MID',a:35,c:'Al-Sadd',l:'卡塔尔联',r:3.0},
+    {n:'Camilo Vargas',cn:'巴尔加斯',p:'GK',a:37,c:'Atlas',l:'墨超',r:3.0},
+    {n:'Jhon Durán',cn:'杜兰',p:'FWD',a:22,c:'Aston Villa',l:'英超',r:3.0},
+    {n:'Deiver Machado',cn:'马查多',p:'DEF',a:32,c:'Lens',l:'法甲',r:2.5}
+  ],
+
+
+
+  'England': [
+    {n:'Harry Kane',cn:'凯恩',p:'FWD',a:32,c:'Bayern Munich',l:'德甲',r:5.0},
+    {n:'Jude Bellingham',cn:'贝林厄姆',p:'MID',a:22,c:'Real Madrid',l:'西甲',r:4.5},
+    {n:'Phil Foden',cn:'福登',p:'MID',a:26,c:'Manchester City',l:'英超',r:4.5},
+    {n:'Bukayo Saka',cn:'萨卡',p:'FWD',a:24,c:'Arsenal',l:'英超',r:4.5},
+    {n:'Declan Rice',cn:'赖斯',p:'MID',a:27,c:'Arsenal',l:'英超',r:4.5},
+    {n:'Cole Palmer',cn:'帕尔默',p:'MID',a:24,c:'Chelsea',l:'英超',r:4.0},
+    {n:'Kyle Walker',cn:'沃克',p:'DEF',a:36,c:'Manchester City',l:'英超',r:3.5},
+    {n:'Harry Maguire',cn:'马奎尔',p:'DEF',a:33,c:'Manchester United',l:'英超',r:3.5},
+    {n:'John Stones',cn:'斯通斯',p:'DEF',a:32,c:'Manchester City',l:'英超',r:4.0},
+    {n:'Luke Shaw',cn:'肖',p:'DEF',a:30,c:'Manchester United',l:'英超',r:3.5},
+    {n:'Jordan Pickford',cn:'皮克福德',p:'GK',a:32,c:'Everton',l:'英超',r:3.5},
+    {n:'Jack Grealish',cn:'格拉利什',p:'MID',a:30,c:'Manchester City',l:'英超',r:3.5},
+    {n:'Trent Alexander-Arnold',cn:'阿诺德',p:'DEF',a:27,c:'Liverpool',l:'英超',r:3.5},
+    {n:'Aaron Ramsdale',cn:'拉姆斯代尔',p:'GK',a:28,c:'Arsenal',l:'英超',r:3.5}
+  ],
+
+  'Croatia': [
+    {n:'Luka Modrić',cn:'莫德里奇',p:'MID',a:40,c:'Real Madrid',l:'西甲',r:4.5},
+    {n:'Mateo Kovačić',cn:'科瓦契奇',p:'MID',a:32,c:'Manchester City',l:'英超',r:4.0},
+    {n:'Andrej Kramarić',cn:'克拉马里奇',p:'FWD',a:35,c:'TSG Hoffenheim',l:'德甲',r:3.5},
+    {n:'Ivan Perišić',cn:'佩里西奇',p:'FWD',a:37,c:'Hajduk Split',l:'克甲',r:3.5},
+    {n:'Marcelo Brozović',cn:'布罗佐维奇',p:'MID',a:33,c:'Al-Nassr',l:'沙特联',r:3.5},
+    {n:'Lovro Majer',cn:'马耶尔',p:'MID',a:28,c:'VfL Wolfsburg',l:'德甲',r:3.0},
+    {n:'Borna Sosa',cn:'索萨',p:'DEF',a:28,c:'Ajax',l:'荷甲',r:3.0},
+    {n:'Martin Erlić',cn:'埃利奇',p:'DEF',a:28,c:'Sassuolo',l:'意甲',r:2.5},
+    {n:'Dominik Livaković',cn:'利瓦科维奇',p:'GK',a:31,c:'Fenerbahçe',l:'土超',r:3.5},
+    {n:'Mario Pašalić',cn:'帕萨利奇',p:'MID',a:31,c:'Atalanta',l:'意甲',r:3.0},
+    {n:'Bruno Petković',cn:'佩特科维奇',p:'FWD',a:31,c:'Dinamo Zagreb',l:'克甲',r:3.0},
+    {n:'Joško Gvardiol',cn:'格瓦迪奥尔',p:'DEF',a:24,c:'Manchester City',l:'英超',r:4.5},
+    {n:'Luka Sučić',cn:'苏契奇',p:'MID',a:23,c:'RB Salzburg',l:'奥超',r:3.0}
+  ],
+
+  'Ghana': [
+    {n:'Mohammed Kudus',cn:'库杜斯',p:'MID',a:25,c:'West Ham',l:'英超',r:4.0},
+    {n:'Thomas Partey',cn:'帕尔特伊',p:'MID',a:32,c:'Arsenal',l:'英超',r:3.5},
+    {n:'Iñaki Williams',cn:'伊尼亚基·威廉姆斯',p:'FWD',a:32,c:'Athletic Bilbao',l:'西甲',r:3.5},
+    {n:'Tariq Lamptey',cn:'兰普泰',p:'DEF',a:25,c:'Brighton',l:'英超',r:3.0},
+    {n:'Osman Bukari',cn:'布卡里',p:'FWD',a:27,c:'Red Star Belgrade',l:'塞超',r:2.5},
+    {n:'Antoine Semenyo',cn:'塞梅尼奥',p:'FWD',a:26,c:'Bournemouth',l:'英超',r:3.0},
+    {n:'Jordan Ayew',cn:'乔丹·阿尤',p:'FWD',a:34,c:'Crystal Palace',l:'英超',r:3.0},
+    {n:'Alexander Djiku',cn:'吉库',p:'DEF',a:31,c:'Fenerbahçe',l:'土超',r:3.0},
+    {n:'Mohammed Salisu',cn:'萨利苏',p:'DEF',a:27,c:'AS Monaco',l:'法甲',r:3.5},
+    {n:'Alidu Seidu',cn:'塞杜',p:'DEF',a:26,c:'Clermont Foot',l:'法甲',r:2.5},
+    {n:'Gideon Mensah',cn:'门萨',p:'DEF',a:27,c:'Auxerre',l:'法甲',r:2.5},
+    {n:'Richard Ofori',cn:'奥福里',p:'GK',a:32,c:'Orlando Pirates',l:'南非超',r:2.5},
+    {n:'Ernest Nuamah',cn:'努阿马',p:'MID',a:22,c:'Lyon',l:'法甲',r:3.0},
+    {n:'Daniel-Kofi Kyereh',cn:'基雷',p:'MID',a:30,c:'SC Freiburg',l:'德甲',r:2.5}
+  ],
+
+  'Panama': [
+    {n:'Ismael Díaz',cn:'迪亚斯',p:'FWD',a:29,c:'Universidad Católica',l:'厄甲',r:2.5},
+    {n:'José Fajardo',cn:'法哈多',p:'FWD',a:32,c:'CD Universitario',l:'巴拿甲',r:2.5},
+    {n:'Adalberto Carrasquilla',cn:'卡拉斯奎利亚',p:'MID',a:27,c:'Houston Dynamo',l:'美职联',r:2.5},
+    {n:'Édgar Bárcenas',cn:'巴塞纳斯',p:'MID',a:32,c:'Mazatlán',l:'墨超',r:2.5},
+    {n:'Yoel Bárcenas',cn:'巴塞纳斯',p:'MID',a:30,c:'Alajuelense',l:'哥斯甲',r:2.0},
+    {n:'Aníbal Godoy',cn:'戈多伊',p:'MID',a:36,c:'Nashville SC',l:'美职联',r:2.5},
+    {n:'Michael Murillo',cn:'穆里略',p:'DEF',a:30,c:'Marseille',l:'法甲',r:3.0},
+    {n:'Andrés Andrade',cn:'安德拉德',p:'DEF',a:28,c:'Alajuelense',l:'哥斯甲',r:2.5},
+    {n:'Harold Cummings',cn:'卡明斯',p:'DEF',a:34,c:'Xelajú MC',l:'危甲',r:2.5},
+    {n:'Roderick Miller',cn:'米勒',p:'DEF',a:34,c:'Maccabi Petah Tikva',l:'以超',r:2.0},
+    {n:'Luis Mejía',cn:'梅希亚',p:'GK',a:35,c:'Flamengo',l:'巴甲',r:2.5},
+    {n:'José Rodríguez',cn:'罗德里格斯',p:'GK',a:27,c:'Árabe Unido',l:'巴拿甲',r:2.0},
+    {n:'César Yanis',cn:'亚尼斯',p:'FWD',a:30,c:'Costa del Este',l:'巴拿甲',r:2.0},
+    {n:'Jiovany Ramos',cn:'拉莫斯',p:'DEF',a:27,c:'Alianza Lima',l:'秘甲',r:2.0}
+  ]
+};
+
+
+// ===== STAR RENDERER =====
+function renderStars(rating,size=12){
+  let h="";
+  for(let i=0;i<5;i++){
+    const d=rating-i;
+    if(d>=1) h+="<span class=\"star\" style=\"font-size:"+size+"px\">★</span>";
+    else if(d>=0.5) h+="<span class=\"star half\" style=\"font-size:"+size+"px\">☆</span>";
+    else h+="<span class=\"star empty\" style=\"font-size:"+size+"px\">★</span>";
+  }
+  return h+"<span class=\"rating-score\">"+rating.toFixed(1)+"</span>";
+}
+
+// ===== UK TIME TO BEIJING =====
+// UK BST = UTC+1, Beijing = UTC+8, so +7 hours
+function ukToBeijing(day,month,timeStr){
+  if(!timeStr||timeStr==="TBC") return {day,month,time:"TBC"};
+  const [h,m]=timeStr.split(":").map(Number);
+  const totalMin=h*60+m+7*60;
+  const newDays=Math.floor(totalMin/(24*60));
+  const rem=totalMin%(24*60);
+  const newH=Math.floor(rem/60);
+  const newM=rem%60;
+  let bjDay=day+newDays,bjMonth=month,bjYear=2026;
+  const dim=new Date(bjYear,bjMonth,0).getDate();
+  if(bjDay>dim){bjDay-=dim;bjMonth+=1}
+  return{day:bjDay,month:bjMonth,time:String(newH).padStart(2,"0")+":"+String(newM).padStart(2,"0")};
+}
+
+// ===== CALENDAR =====
+let calMonth = 6, calYear = 2026;
+
+function buildCalendar(){
+  const grid = document.getElementById('calendarGrid');
+  const label = document.getElementById('monthLabel');
+  label.textContent = new Date(calYear,calMonth-1).toLocaleString('en',{month:'long',year:'numeric'});
+  const today = new Date();
+  const firstDay = new Date(calYear,calMonth-1,1).getDay();
+  const daysInMonth = new Date(calYear,calMonth,0).getDate();
+  
+  let html = '<div class="calendar-header">Mon</div><div class="calendar-header">Tue</div><div class="calendar-header">Wed</div><div class="calendar-header">Thu</div><div class="calendar-header">Fri</div><div class="calendar-header">Sat</div><div class="calendar-header">Sun</div>';
+  let startIdx = firstDay === 0 ? 6 : firstDay - 1;
+  for(let i=0;i<startIdx;i++) html += '<div class="calendar-day empty"></div>';
+  
+  for(let d=1;d<=daysInMonth;d++){
+    const isToday = today.getDate()===d && today.getMonth()+1===calMonth && today.getFullYear()===calYear;
+    // Find matches by Beijing date
+    const dayMatches = [];
+    for(const m of MATCHES){
+      const bj = ukToBeijing(m.d,m.m,m.t);
+      if(bj.day===d && bj.month===calMonth) dayMatches.push({...m,bjTime:bj.time});
+    }
+    let cls = 'calendar-day';
+    if(isToday) cls += ' today';
+    if(dayMatches.length) cls += ' has-match';
+    
+    html += '<div class="'+cls+'">';
+    html += '<div class="cal-day-header"><span class="day-num">'+d+'</span><span class="match-count">今日比赛 '+dayMatches.length+' 场</span></div>';
+    html += '<div class="cal-matches">';
+    for(const m of dayMatches){
+      const isKO = m.p!=='GS';
+      const cnH = TEAMS[m.h] ? TEAMS[m.h].zh : m.h;
+      const cnA = TEAMS[m.a] ? TEAMS[m.a].zh : m.a;
+      const grpLabel = isKO ? PHASE_LABELS[m.p] : m.grp;
+      const grpCls = isKO ? 'ko-match' : '';
+      html += '<div class="cal-match '+grpCls+'" onclick="scrollToGroup(\''+m.grp+'\')">';
+      html += '<span class="cm-grp">'+grpLabel+'</span>';
+      html += '<div class="cm-vs-row"><span class="cm-team">'+cnH+'</span><span class="cm-vs-word">VS</span><span class="cm-team">'+cnA+'</span></div>';
+      html += '<div><div class="cm-time">'+m.bjTime+'</div><div class="cm-tz">北京时间</div></div>';
+      html += '</div>';
+    }
+    html += '</div></div>';
+  }
+  grid.innerHTML = html;
+}
+
+function switchMonth(dir){
+  calMonth += dir;
+  if(calMonth>12){calMonth=1;calYear++;}
+  if(calMonth<1){calMonth=12;calYear--;}
+  buildCalendar();
+}
+
+function scrollToGroup(g){
+  const el = document.getElementById('group-'+g);
+  if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ===== GROUPS =====
+const GROUP_DATA = [
+  {id:'A',teams:['Mexico','South Africa','South Korea','Czech Republic']},
+  {id:'B',teams:['Canada','Bosnia and Herzegovina','Qatar','Switzerland']},
+  {id:'C',teams:['Brazil','Morocco','Haiti','Scotland']},
+  {id:'D',teams:['United States','Paraguay','Australia','Turkey']},
+  {id:'E',teams:['Germany','Curacao','Ivory Coast','Ecuador']},
+  {id:'F',teams:['Netherlands','Japan','Sweden','Tunisia']},
+  {id:'G',teams:['Belgium','Egypt','Iran','New Zealand']},
+  {id:'H',teams:['Spain','Cape Verde','Saudi Arabia','Uruguay']},
+  {id:'I',teams:['France','Senegal','Iraq','Norway']},
+  {id:'J',teams:['Argentina','Algeria','Austria','Jordan']},
+  {id:'K',teams:['Portugal','Congo DR','Uzbekistan','Colombia']},
+  {id:'L',teams:['England','Croatia','Ghana','Panama']}
+];
+
+function renderGroups(){
+  const c = document.getElementById('groupsContainer');
+  let html = '';
+  for(const g of GROUP_DATA){
+    html += '<div class="group-card" id="group-'+g.id+'">';
+    html += '<div class="group-header">Group '+g.id+'</div><div class="group-body">';
+    g.teams.forEach((t,i)=>{
+      const td = TEAMS[t]||{zh:t,flag:'🌍',rating:2,reason:''};
+      html += '<div class="team-row" onclick="openDetail(\''+t+'\')">';
+      html += '<div class="team-pos">'+(i+1)+'</div><div class="team-info">';
+      html += '<div class="team-name"><span class="flag">'+td.flag+'</span>'+t+' <span class="zh">'+td.zh+'</span><span class="record" id="rec-'+t.replace(/[^a-zA-Z]/g,'')+'">0-0</span></div>';
+      html += '<div class="team-rating">'+renderStars(td.rating)+'</div>';
+      html += '<div class="team-reason">'+td.reason+'</div>';
+      html += '</div></div>';
+    });
+    html += '</div></div>';
+  }
+  c.innerHTML = html;
+}
+
+// ===== DETAIL PAGE =====
+function openDetail(team){
+  const overlay = document.getElementById('detailOverlay');
+  const content = document.getElementById('detailContent');
+  const td = TEAMS[team]||{zh:team,flag:'🌍',rating:2,reason:''};
+  const squad = SQUADS[team]||[];
+  const teamMatches = MATCHES.filter(m=>m.h===team||m.a===team);
+  
+  function renderDetail(activeTab){
+    let h = '';
+    h += '<div class="detail-hero">';
+    h += '<div class="team-big"><span class="flag">'+td.flag+'</span> '+team+' <span class="zh">'+td.zh+'</span></div>';
+    h += '<div class="rating-big">'+renderStars(td.rating,18)+'</div>';
+    h += '<div class="reason-big">💬 '+td.reason+'</div>';
+    h += '<div class="detail-meta">';
+    h += '<span>👥 阵容 '+(squad.length)+' 人</span>';
+    h += '<span>📊 战力评分 '+td.rating.toFixed(1)+'/5.0</span>';
+    h += '<span><span class="label">小组</span> '+(GROUP_DATA.find(g=>g.teams.includes(team))?.id||'?')+'</span>';
+    h += '</div></div>';
+    
+    h += '<div class="detail-tabs">';
+    h += '<button class="detail-tab'+(activeTab==='squad'?' active':'')+'" onclick="renderDetailTab(\''+team+'\',\'squad\')">👥 阵容</button>';
+    h += '<button class="detail-tab'+(activeTab==='matches'?' active':'')+'" onclick="renderDetailTab(\''+team+'\',\'matches\')">📋 赛程赛果</button>';
+    h += '<button class="detail-tab'+(activeTab==='stats'?' active':'')+'" onclick="renderDetailTab(\''+team+'\',\'stats\')">📊 数据</button>';
+    h += '</div>';
+    
+    // Squad panel
+    h += '<div class="detail-content"><div class="detail-panel'+(activeTab==='squad'?' active':'')+'" id="panel-squad">';
+    h += '<table class="squad-table"><thead><tr><th>#</th><th>位置</th><th>姓名</th><th>中文名</th><th>年龄</th><th>俱乐部</th><th>赛事</th><th>能力评分</th></tr></thead><tbody>';
+    squad.forEach((pl,i)=>{
+      const ageAtCup = pl.a||Math.floor(Math.random()*12+22);
+      const pr = typeof pl.r==='number' ? pl.r : 3.0;
+      const pcn = pl.cn||'';
+      h += '<tr><td>'+(i+1)+'</td>';
+      h += '<td><span class="pos-badge pos-'+pl.p+'">'+pl.p+'</span></td>';
+      h += '<td>'+pl.n+'</td>';
+      h += '<td class="cn">'+pcn+'</td>';
+      h += '<td class="age">'+ageAtCup+'</td>';
+      h += '<td class="club">'+pl.c+'</td>';
+      h += '<td class="club">'+pl.l+'</td>';
+      h += '<td><div class="ps">'+renderStars(pr,9).replace('<span class="rating-score">','<span class="rating-score" style="display:none">')+'</div></td>';
+      h += '</tr>';
+    });
+    h += '</tbody></table></div>';
+    
+    // Matches panel
+    h += '<div class="detail-panel'+(activeTab==='matches'?' active':'')+'" id="panel-matches">';
+    if(teamMatches.length){
+      h += '<table class="match-table"><thead><tr><th>日期</th><th>阶段</th><th>对阵</th><th>结果</th><th>北京时间</th></tr></thead><tbody>';
+      for(const m of teamMatches){
+        const isHome = m.h===team;
+        const opp = isHome?m.a:m.h;
+        const bj = ukToBeijing(m.d,m.m,m.t);
+        const dateStr = bj.month+'/'+bj.day;
+        const phase = m.p==='GS'?'Group '+m.grp:PHASE_LABELS[m.p];
+        h += '<tr><td>'+dateStr+'</td><td><span class="match-group">'+phase+'</span></td>';
+        h += '<td class="match-vs">'+(isHome?team+' vs '+opp:opp+' vs '+team)+'</td>';
+        h += '<td class="match-draw">—</td>';
+        h += '<td>'+bj.time+'</td></tr>';
+      }
+      h += '</tbody></table>';
+    } else {h += '<p style="color:var(--text-muted);padding:12px">暂无赛程数据</p>';}
+    h += '</div>';
+    
+    // Stats panel
+    h += '<div class="detail-panel'+(activeTab==='stats'?' active':'')+'" id="panel-stats">';
+    h += '<div class="stats-grid">';
+    h += '<div class="stat-box"><div class="stat-val">'+teamMatches.length+'</div><div class="stat-label">总场次</div></div>';
+    h += '<div class="stat-box"><div class="stat-val">0</div><div class="stat-label">胜</div></div>';
+    h += '<div class="stat-box"><div class="stat-val">0</div><div class="stat-label">平</div></div>';
+    h += '<div class="stat-box"><div class="stat-val">0</div><div class="stat-label">负</div></div>';
+    h += '<div class="stat-box"><div class="stat-val">'+td.rating.toFixed(1)+'</div><div class="stat-label">战力评分</div></div>';
+    h += '<div class="stat-box"><div class="stat-val">'+squad.length+'</div><div class="stat-label">阵容人数</div></div>';
+    h += '</div></div></div>';
+    
+    document.getElementById('detailCard').querySelector('#detailContent').innerHTML = h;
+  }
+  
+  window.renderDetailTab = function(t,tabName){
+    const td2 = TEAMS[t]||{zh:t,flag:'🌍',rating:2,reason:''};
+    const squad2 = SQUADS[t]||[];
+    openDetail(t);
+  };
+  
+  renderDetail('squad');
+  overlay.classList.add('active');
+  document.body.classList.add('detail-view');
+  overlay.onclick = function(e){if(e.target===overlay) closeDetail();};
+  document.addEventListener('keydown',__closeHandler = function(e){if(e.key==='Escape') closeDetail();});
+}
+
+function closeDetail(){
+  document.getElementById('detailOverlay').classList.remove('active');
+  document.body.classList.remove('detail-view');
+  if(window.__closeHandler) document.removeEventListener('keydown',__closeHandler);
+}
+
+// ===== INIT =====
+buildCalendar();
+renderGroups();
+</script>
+</body>
+</html>
