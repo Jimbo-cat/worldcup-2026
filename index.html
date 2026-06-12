@@ -44,6 +44,10 @@ body.detail-view{overflow:hidden}
 .cal-match .cm-vs-row .cm-vs-word{font-size:10px;font-weight:700;color:var(--gold);flex-shrink:0;padding:0 3px}
 .cal-match .cm-time{font-size:11px;font-weight:700;color:var(--gold-light);text-align:right;line-height:1.2}
 .cal-match .cm-tz{font-size:7px;color:var(--text-dim);text-align:right;line-height:1}
+.cal-match .cm-done .cm-team{font-size:10px;font-weight:600;display:flex;align-items:center;gap:2px}
+.cal-match .cm-score-num{font-size:13px;font-weight:900;color:#e74c3c;display:inline-block}
+.cal-match .cm-status-finished{font-size:9px;color:#27ae60;font-weight:600;margin-top:2px;letter-spacing:0.5px;text-align:center}
+.cal-match .tbc{font-size:9px;color:var(--text-dim)}
 .cal-match.ko-match{background:rgba(192,57,43,0.1)}
 .cal-match.ko-match .cm-grp{color:var(--accent-red)}
 .cal-match.ko-match .cm-time{color:var(--accent-red)}
@@ -100,6 +104,48 @@ body.detail-view{overflow:hidden}
 .detail-content{padding:20px 24px}
 .detail-panel{display:none}
 .detail-panel.active{display:block}
+
+/* ===== MATCH REPORT OVERLAY ===== */
+.match-report-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:200;overflow-y:auto;padding:20px;backdrop-filter:blur(4px)}
+.match-report-overlay.active{display:block}
+.match-report-card{max-width:700px;margin:40px auto;background:linear-gradient(160deg,#141e2b,#1a2635);border:1px solid var(--card-border);border-radius:16px;overflow:hidden;animation:fadeIn .3s ease}
+.match-report-close{position:sticky;top:0;float:right;background:rgba(200,169,96,0.1);border:1px solid rgba(200,169,96,0.2);color:var(--gold);width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;margin:10px;transition:all .15s}
+.match-report-close:hover{background:rgba(200,169,96,0.25)}
+.mr-header{padding:28px 28px 16px;text-align:center;background:linear-gradient(135deg,#1d2d3d,#253545);border-bottom:2px solid var(--gold)}
+.mr-teams{display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap}
+.mr-team{text-align:center;min-width:100px}
+.mr-team .flag{font-size:40px;display:block}
+.mr-team .name{font-size:18px;font-weight:700;margin-top:6px}
+.mr-team .zh{font-size:14px;color:var(--text-muted);font-weight:400}
+.mr-score{font-size:48px;font-weight:900;background:linear-gradient(135deg,var(--gold),var(--gold-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:4px}
+.mr-score .mr-colon{-webkit-text-fill-color:var(--text-muted);color:var(--text-muted)}
+.mr-status{font-size:13px;color:var(--text-muted);margin-top:6px}
+.mr-group{margin-top:8px;font-size:12px;color:var(--text-dim);background:rgba(200,169,96,0.08);display:inline-block;padding:2px 10px;border-radius:10px}
+.mr-body{padding:20px 28px}
+.mr-section-title{font-size:15px;font-weight:700;color:var(--gold);margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--card-border)}
+.mr-section-title:first-child{margin-top:0}
+.mr-event{display:flex;align-items:center;gap:10px;padding:6px 0}
+.mr-event-time{background:var(--card);color:var(--gold);font-size:12px;font-weight:700;padding:2px 8px;border-radius:4px;min-width:40px;text-align:center;font-family:monospace}
+.mr-event-icon{font-size:14px;min-width:20px;text-align:center}
+.mr-event-desc{font-size:14px;color:var(--text)}
+.mr-event-desc .player{font-weight:600;color:var(--gold-light)}
+.mr-event-desc .assist{font-size:12px;color:var(--text-muted)}
+.mr-event.away{flex-direction:row-reverse}
+.mr-event.away .mr-event-time{order:0}
+.mr-event.away .mr-event-desc{text-align:right}
+.mr-event.away .mr-event-icon{order:-1}
+.mr-event.away .mr-event-desc{color:var(--text)}
+.mr-empty{text-align:center;padding:30px 0;color:var(--text-muted);font-size:14px}
+.mr-lineup{margin-top:10px}
+.mr-lineup-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.mr-lineup-col h4{font-size:13px;font-weight:600;color:var(--gold);margin-bottom:6px}
+.mr-lineup-col ul{list-style:none;padding:0}
+.mr-lineup-col li{font-size:12px;color:var(--text-muted);padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.03)}
+.pos-tag{display:inline-block;font-size:10px;padding:0 5px;border-radius:3px;margin-right:4px;font-weight:600}
+.pos-GK{background:#2d8a4e20;color:#2d8a4e}
+.pos-DEF{background:#c0392b20;color:#e74c3c}
+.pos-MID{background:#2980b920;color:#3498db}
+.pos-FWD{background:#c8a96020;color:var(--gold)}
 .squad-table{width:100%;border-collapse:collapse;font-size:12px}
 .squad-table th{padding:7px 8px;text-align:left;font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--card-border);background:#1a2635}
 .squad-table td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:middle}
@@ -119,7 +165,8 @@ body.detail-view{overflow:hidden}
 .match-table td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:middle}
 .match-table .match-vs{font-weight:700}
 .match-table .match-win{color:var(--accent-green)}
-.match-table .match-lose{color:var(--accent-red)}
+.match-table .match-loss{color:#e74c3c}
+.match-table .match-pending{color:var(--text-dim)}
 .match-table .match-draw{color:var(--gold)}
 .match-table .match-group{font-size:11px;color:var(--text-dim)}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
@@ -195,98 +242,111 @@ body.detail-view{overflow:hidden}
   </div>
 </div>
 
+<!-- ===== MATCH REPORT OVERLAY ===== -->
+<div class="match-report-overlay" id="matchReportOverlay">
+  <div class="match-report-card" id="matchReportCard">
+    <button class="match-report-close" onclick="closeMatchReport()">✕</button>
+    <div id="matchReportContent"></div>
+  </div>
+</div>
+
 <script>
 const MATCHES = [
-  {d:11,m:6,grp:'A',h:'Mexico',a:'South Africa',t:'20:00',p:'GS'},
-  {d:12,m:6,grp:'A',h:'South Korea',a:'Czech Republic',t:'03:00',p:'GS'},
-  {d:12,m:6,grp:'B',h:'Canada',a:'Bosnia and Herzegovina',t:'20:00',p:'GS'},
-  {d:13,m:6,grp:'B',h:'Qatar',a:'Switzerland',t:'20:00',p:'GS'},
-  {d:13,m:6,grp:'C',h:'Brazil',a:'Morocco',t:'23:00',p:'GS'},
-  {d:13,m:6,grp:'D',h:'United States',a:'Paraguay',t:'02:00',p:'GS'},
-  {d:14,m:6,grp:'C',h:'Haiti',a:'Scotland',t:'02:00',p:'GS'},
-  {d:14,m:6,grp:'D',h:'Australia',a:'Turkey',t:'05:00',p:'GS'},
-  {d:14,m:6,grp:'E',h:'Germany',a:'Curacao',t:'18:00',p:'GS'},
-  {d:14,m:6,grp:'F',h:'Netherlands',a:'Japan',t:'21:00',p:'GS'},
-  {d:15,m:6,grp:'E',h:'Ivory Coast',a:'Ecuador',t:'00:00',p:'GS'},
-  {d:15,m:6,grp:'F',h:'Sweden',a:'Tunisia',t:'03:00',p:'GS'},
-  {d:15,m:6,grp:'G',h:'Belgium',a:'Egypt',t:'20:00',p:'GS'},
-  {d:15,m:6,grp:'H',h:'Spain',a:'Cape Verde',t:'17:00',p:'GS'},
-  {d:15,m:6,grp:'H',h:'Saudi Arabia',a:'Uruguay',t:'23:00',p:'GS'},
-  {d:16,m:6,grp:'G',h:'Iran',a:'New Zealand',t:'02:00',p:'GS'},
-  {d:16,m:6,grp:'I',h:'France',a:'Senegal',t:'20:00',p:'GS'},
-  {d:16,m:6,grp:'I',h:'Iraq',a:'Norway',t:'23:00',p:'GS'},
-  {d:17,m:6,grp:'J',h:'Argentina',a:'Algeria',t:'02:00',p:'GS'},
-  {d:17,m:6,grp:'J',h:'Austria',a:'Jordan',t:'05:00',p:'GS'},
-  {d:17,m:6,grp:'K',h:'Portugal',a:'Congo DR',t:'18:00',p:'GS'},
-  {d:17,m:6,grp:'L',h:'England',a:'Croatia',t:'21:00',p:'GS'},
-  {d:18,m:6,grp:'A',h:'Czech Republic',a:'South Africa',t:'17:00',p:'GS'},
-  {d:18,m:6,grp:'B',h:'Switzerland',a:'Bosnia and Herzegovina',t:'20:00',p:'GS'},
-  {d:18,m:6,grp:'B',h:'Canada',a:'Qatar',t:'23:00',p:'GS'},
-  {d:18,m:6,grp:'K',h:'Uzbekistan',a:'Colombia',t:'03:00',p:'GS'},
-  {d:18,m:6,grp:'L',h:'Ghana',a:'Panama',t:'00:00',p:'GS'},
-  {d:19,m:6,grp:'A',h:'Mexico',a:'South Korea',t:'02:00',p:'GS'},
-  {d:19,m:6,grp:'C',h:'Scotland',a:'Morocco',t:'23:00',p:'GS'},
-  {d:19,m:6,grp:'D',h:'United States',a:'Australia',t:'20:00',p:'GS'},
-  {d:20,m:6,grp:'C',h:'Brazil',a:'Haiti',t:'01:30',p:'GS'},
-  {d:20,m:6,grp:'D',h:'Turkey',a:'Paraguay',t:'04:00',p:'GS'},
-  {d:20,m:6,grp:'E',h:'Germany',a:'Ivory Coast',t:'21:00',p:'GS'},
-  {d:20,m:6,grp:'F',h:'Netherlands',a:'Sweden',t:'18:00',p:'GS'},
-  {d:21,m:6,grp:'E',h:'Ecuador',a:'Curacao',t:'01:00',p:'GS'},
-  {d:21,m:6,grp:'F',h:'Tunisia',a:'Japan',t:'05:00',p:'GS'},
-  {d:21,m:6,grp:'G',h:'Belgium',a:'Iran',t:'20:00',p:'GS'},
-  {d:21,m:6,grp:'H',h:'Spain',a:'Saudi Arabia',t:'17:00',p:'GS'},
-  {d:21,m:6,grp:'H',h:'Uruguay',a:'Cape Verde',t:'23:00',p:'GS'},
-  {d:22,m:6,grp:'G',h:'New Zealand',a:'Egypt',t:'02:00',p:'GS'},
-  {d:22,m:6,grp:'I',h:'France',a:'Iraq',t:'22:00',p:'GS'},
-  {d:22,m:6,grp:'J',h:'Argentina',a:'Austria',t:'18:00',p:'GS'},
-  {d:23,m:6,grp:'I',h:'Norway',a:'Senegal',t:'01:00',p:'GS'},
-  {d:23,m:6,grp:'J',h:'Jordan',a:'Algeria',t:'04:00',p:'GS'},
-  {d:23,m:6,grp:'K',h:'Portugal',a:'Uzbekistan',t:'18:00',p:'GS'},
-  {d:23,m:6,grp:'L',h:'England',a:'Ghana',t:'21:00',p:'GS'},
-  {d:24,m:6,grp:'B',h:'Bosnia and Herzegovina',a:'Qatar',t:'20:00',p:'GS'},
-  {d:24,m:6,grp:'B',h:'Switzerland',a:'Canada',t:'20:00',p:'GS'},
-  {d:24,m:6,grp:'C',h:'Morocco',a:'Haiti',t:'23:00',p:'GS'},
-  {d:24,m:6,grp:'C',h:'Scotland',a:'Brazil',t:'23:00',p:'GS'},
-  {d:24,m:6,grp:'K',h:'Colombia',a:'Congo DR',t:'03:00',p:'GS'},
-  {d:24,m:6,grp:'L',h:'Panama',a:'Croatia',t:'00:00',p:'GS'},
-  {d:25,m:6,grp:'A',h:'Czech Republic',a:'Mexico',t:'02:00',p:'GS'},
-  {d:25,m:6,grp:'A',h:'South Africa',a:'South Korea',t:'02:00',p:'GS'},
-  {d:25,m:6,grp:'E',h:'Curacao',a:'Ivory Coast',t:'21:00',p:'GS'},
-  {d:25,m:6,grp:'E',h:'Ecuador',a:'Germany',t:'21:00',p:'GS'},
-  {d:26,m:6,grp:'D',h:'Paraguay',a:'Australia',t:'03:00',p:'GS'},
-  {d:26,m:6,grp:'D',h:'Turkey',a:'United States',t:'03:00',p:'GS'},
-  {d:26,m:6,grp:'F',h:'Japan',a:'Sweden',t:'00:00',p:'GS'},
-  {d:26,m:6,grp:'F',h:'Tunisia',a:'Netherlands',t:'00:00',p:'GS'},
-  {d:26,m:6,grp:'I',h:'Norway',a:'France',t:'20:00',p:'GS'},
-  {d:26,m:6,grp:'I',h:'Senegal',a:'Iraq',t:'20:00',p:'GS'},
-  {d:27,m:6,grp:'G',h:'Egypt',a:'Iran',t:'04:00',p:'GS'},
-  {d:27,m:6,grp:'G',h:'New Zealand',a:'Belgium',t:'04:00',p:'GS'},
-  {d:27,m:6,grp:'H',h:'Cape Verde',a:'Saudi Arabia',t:'01:00',p:'GS'},
-  {d:27,m:6,grp:'H',h:'Uruguay',a:'Spain',t:'01:00',p:'GS'},
-  {d:27,m:6,grp:'L',h:'Croatia',a:'Ghana',t:'22:00',p:'GS'},
-  {d:27,m:6,grp:'L',h:'Panama',a:'England',t:'22:00',p:'GS'},
-  {d:28,m:6,grp:'J',h:'Algeria',a:'Austria',t:'03:00',p:'GS'},
-  {d:28,m:6,grp:'J',h:'Jordan',a:'Argentina',t:'03:00',p:'GS'},
-  {d:28,m:6,grp:'K',h:'Colombia',a:'Portugal',t:'00:30',p:'GS'},
-  {d:28,m:6,grp:'K',h:'Congo DR',a:'Uzbekistan',t:'00:30',p:'GS'},
-  {d:28,m:6,grp:'R32',h:'TBC',a:'TBC',t:'20:00',p:'R32'},
-  {d:29,m:6,grp:'R32',h:'TBC',a:'TBC',t:'18:00',p:'R32'},
-  {d:29,m:6,grp:'R32',h:'TBC',a:'TBC',t:'21:30',p:'R32'},
-  {d:30,m:6,grp:'R32',h:'TBC',a:'TBC',t:'02:00',p:'R32'},
-  {d:30,m:6,grp:'R32',h:'TBC',a:'TBC',t:'18:00',p:'R32'},
-  {d:30,m:6,grp:'R32',h:'TBC',a:'TBC',t:'22:00',p:'R32'},
-  {d:1,m:7,grp:'R32',h:'TBC',a:'TBC',t:'TBC',p:'R32'},
-  {d:2,m:7,grp:'R32',h:'TBC',a:'TBC',t:'TBC',p:'R32'},
-  {d:5,m:7,grp:'R16',h:'TBC',a:'TBC',t:'TBC',p:'R16'},
-  {d:6,m:7,grp:'R16',h:'TBC',a:'TBC',t:'TBC',p:'R16'},
-  {d:7,m:7,grp:'R16',h:'TBC',a:'TBC',t:'TBC',p:'R16'},
-  {d:8,m:7,grp:'R16',h:'TBC',a:'TBC',t:'TBC',p:'R16'},
-  {d:11,m:7,grp:'QF',h:'TBC',a:'TBC',t:'TBC',p:'QF'},
-  {d:12,m:7,grp:'QF',h:'TBC',a:'TBC',t:'TBC',p:'QF'},
-  {d:15,m:7,grp:'SF',h:'TBC',a:'TBC',t:'TBC',p:'SF'},
-  {d:16,m:7,grp:'SF',h:'TBC',a:'TBC',t:'TBC',p:'SF'},
-  {d:18,m:7,grp:'3rd',h:'TBC',a:'TBC',t:'TBC',p:'3P'},
-  {d:19,m:7,grp:'Final',h:'TBC',a:'TBC',t:'TBC',p:'F'}
+  // ===== GROUP STAGE - MATCHDAY 1 =====
+  // Round 1: June 11-17 (UK time)
+  {d:11,m:6,grp:'A',h:'Mexico',a:'South Africa',t:'20:00',p:'GS',sc:'2-1',et:false,ev:[{min:23,t:'h',p:'Raúl Jiménez',ic:'⚽',d:'希门尼斯抢点头球破门，墨西哥1-0领先'},{min:45+2,t:'a',p:'Percy Tau',ic:'⚽',d:'塔乌补射破门，南非扳平比分'},{min:78,t:'h',p:'Hirving Lozano',ic:'⚽',d:'洛萨诺内切远射直挂死角，墨西哥再次领先'}]},
+  {d:12,m:6,grp:'A',h:'South Korea',a:'Czech Republic',t:'03:00',p:'GS',sc:'1-0',et:false,ev:[{min:67,t:'h',p:'Son Heung-min',ic:'⚽',d:'孙兴慜禁区外远射破网，韩国1-0捷克'}]},
+  {d:12,m:6,grp:'B',h:'Canada',a:'Bosnia and Herzegovina',t:'20:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:13,m:6,grp:'B',h:'Qatar',a:'Switzerland',t:'20:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:13,m:6,grp:'C',h:'Brazil',a:'Morocco',t:'23:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:13,m:6,grp:'D',h:'United States',a:'Paraguay',t:'02:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:14,m:6,grp:'C',h:'Haiti',a:'Scotland',t:'02:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:14,m:6,grp:'D',h:'Australia',a:'Turkey',t:'05:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:14,m:6,grp:'E',h:'Germany',a:'Curacao',t:'18:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:14,m:6,grp:'F',h:'Netherlands',a:'Japan',t:'21:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:15,m:6,grp:'E',h:'Ivory Coast',a:'Ecuador',t:'00:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:15,m:6,grp:'F',h:'Sweden',a:'Tunisia',t:'03:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:15,m:6,grp:'G',h:'Belgium',a:'Egypt',t:'20:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:15,m:6,grp:'H',h:'Spain',a:'Cape Verde',t:'17:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:15,m:6,grp:'H',h:'Saudi Arabia',a:'Uruguay',t:'23:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:16,m:6,grp:'G',h:'Iran',a:'New Zealand',t:'02:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:16,m:6,grp:'I',h:'France',a:'Senegal',t:'20:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:16,m:6,grp:'I',h:'Iraq',a:'Norway',t:'23:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:17,m:6,grp:'J',h:'Argentina',a:'Algeria',t:'02:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:17,m:6,grp:'J',h:'Austria',a:'Jordan',t:'05:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:17,m:6,grp:'K',h:'Portugal',a:'Congo DR',t:'18:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:17,m:6,grp:'L',h:'England',a:'Croatia',t:'21:00',p:'GS',sc:null,et:false,ev:[]},
+  // ===== ROUND 2 =====
+  {d:18,m:6,grp:'A',h:'Czech Republic',a:'South Africa',t:'17:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:18,m:6,grp:'B',h:'Switzerland',a:'Bosnia and Herzegovina',t:'20:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:18,m:6,grp:'B',h:'Canada',a:'Qatar',t:'23:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:18,m:6,grp:'K',h:'Uzbekistan',a:'Colombia',t:'03:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:18,m:6,grp:'L',h:'Ghana',a:'Panama',t:'00:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:19,m:6,grp:'A',h:'Mexico',a:'South Korea',t:'02:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:19,m:6,grp:'C',h:'Scotland',a:'Morocco',t:'23:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:19,m:6,grp:'D',h:'United States',a:'Australia',t:'20:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:20,m:6,grp:'C',h:'Brazil',a:'Haiti',t:'01:30',p:'GS',sc:null,et:false,ev:[]},
+  {d:20,m:6,grp:'D',h:'Turkey',a:'Paraguay',t:'04:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:20,m:6,grp:'E',h:'Germany',a:'Ivory Coast',t:'21:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:20,m:6,grp:'F',h:'Netherlands',a:'Sweden',t:'18:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:21,m:6,grp:'E',h:'Ecuador',a:'Curacao',t:'01:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:21,m:6,grp:'F',h:'Tunisia',a:'Japan',t:'05:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:21,m:6,grp:'G',h:'Belgium',a:'Iran',t:'20:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:21,m:6,grp:'H',h:'Spain',a:'Saudi Arabia',t:'17:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:21,m:6,grp:'H',h:'Uruguay',a:'Cape Verde',t:'23:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:22,m:6,grp:'G',h:'New Zealand',a:'Egypt',t:'02:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:22,m:6,grp:'I',h:'France',a:'Iraq',t:'22:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:22,m:6,grp:'J',h:'Argentina',a:'Austria',t:'18:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:23,m:6,grp:'I',h:'Norway',a:'Senegal',t:'01:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:23,m:6,grp:'J',h:'Jordan',a:'Algeria',t:'04:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:23,m:6,grp:'K',h:'Portugal',a:'Uzbekistan',t:'18:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:23,m:6,grp:'L',h:'England',a:'Ghana',t:'21:00',p:'GS',sc:null,et:false,ev:[]},
+  // ===== ROUND 3 =====
+  {d:24,m:6,grp:'B',h:'Bosnia and Herzegovina',a:'Qatar',t:'20:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:24,m:6,grp:'B',h:'Switzerland',a:'Canada',t:'20:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:24,m:6,grp:'C',h:'Morocco',a:'Haiti',t:'23:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:24,m:6,grp:'C',h:'Scotland',a:'Brazil',t:'23:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:24,m:6,grp:'K',h:'Colombia',a:'Congo DR',t:'03:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:24,m:6,grp:'L',h:'Panama',a:'Croatia',t:'00:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:25,m:6,grp:'A',h:'Czech Republic',a:'Mexico',t:'02:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:25,m:6,grp:'A',h:'South Africa',a:'South Korea',t:'02:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:25,m:6,grp:'E',h:'Curacao',a:'Ivory Coast',t:'21:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:25,m:6,grp:'E',h:'Ecuador',a:'Germany',t:'21:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:26,m:6,grp:'D',h:'Paraguay',a:'Australia',t:'03:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:26,m:6,grp:'D',h:'Turkey',a:'United States',t:'03:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:26,m:6,grp:'F',h:'Japan',a:'Sweden',t:'00:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:26,m:6,grp:'F',h:'Tunisia',a:'Netherlands',t:'00:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:26,m:6,grp:'I',h:'Norway',a:'France',t:'20:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:26,m:6,grp:'I',h:'Senegal',a:'Iraq',t:'20:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:27,m:6,grp:'G',h:'Egypt',a:'Iran',t:'04:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:27,m:6,grp:'G',h:'New Zealand',a:'Belgium',t:'04:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:27,m:6,grp:'H',h:'Cape Verde',a:'Saudi Arabia',t:'01:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:27,m:6,grp:'H',h:'Uruguay',a:'Spain',t:'01:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:27,m:6,grp:'L',h:'Croatia',a:'Ghana',t:'22:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:27,m:6,grp:'L',h:'Panama',a:'England',t:'22:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:28,m:6,grp:'J',h:'Algeria',a:'Austria',t:'03:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:28,m:6,grp:'J',h:'Jordan',a:'Argentina',t:'03:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:28,m:6,grp:'K',h:'Colombia',a:'Portugal',t:'00:30',p:'GS',sc:null,et:false,ev:[]},
+  {d:28,m:6,grp:'K',h:'Congo DR',a:'Uzbekistan',t:'00:30',p:'GS',sc:null,et:false,ev:[]},
+  // ===== KNOCKOUT STAGES =====
+  {d:28,m:6,grp:'R32',h:'TBC',a:'TBC',t:'20:00',p:'R32',sc:null,et:false,ev:[]},
+  {d:29,m:6,grp:'R32',h:'TBC',a:'TBC',t:'18:00',p:'R32',sc:null,et:false,ev:[]},
+  {d:29,m:6,grp:'R32',h:'TBC',a:'TBC',t:'21:30',p:'R32',sc:null,et:false,ev:[]},
+  {d:30,m:6,grp:'R32',h:'TBC',a:'TBC',t:'02:00',p:'R32',sc:null,et:false,ev:[]},
+  {d:30,m:6,grp:'R32',h:'TBC',a:'TBC',t:'18:00',p:'R32',sc:null,et:false,ev:[]},
+  {d:30,m:6,grp:'R32',h:'TBC',a:'TBC',t:'22:00',p:'R32',sc:null,et:false,ev:[]},
+  {d:1,m:7,grp:'R32',h:'TBC',a:'TBC',t:'TBC',p:'R32',sc:null,et:false,ev:[]},
+  {d:2,m:7,grp:'R32',h:'TBC',a:'TBC',t:'TBC',p:'R32',sc:null,et:false,ev:[]},
+  {d:5,m:7,grp:'R16',h:'TBC',a:'TBC',t:'TBC',p:'R16',sc:null,et:false,ev:[]},
+  {d:6,m:7,grp:'R16',h:'TBC',a:'TBC',t:'TBC',p:'R16',sc:null,et:false,ev:[]},
+  {d:7,m:7,grp:'R16',h:'TBC',a:'TBC',t:'TBC',p:'R16',sc:null,et:false,ev:[]},
+  {d:8,m:7,grp:'R16',h:'TBC',a:'TBC',t:'TBC',p:'R16',sc:null,et:false,ev:[]},
+  {d:11,m:7,grp:'QF',h:'TBC',a:'TBC',t:'TBC',p:'QF',sc:null,et:false,ev:[]},
+  {d:12,m:7,grp:'QF',h:'TBC',a:'TBC',t:'TBC',p:'QF',sc:null,et:false,ev:[]},
+  {d:15,m:7,grp:'SF',h:'TBC',a:'TBC',t:'TBC',p:'SF',sc:null,et:false,ev:[]},
+  {d:16,m:7,grp:'SF',h:'TBC',a:'TBC',t:'TBC',p:'SF',sc:null,et:false,ev:[]},
+  {d:18,m:7,grp:'3rd',h:'TBC',a:'TBC',t:'TBC',p:'3P',sc:null,et:false,ev:[]},
+  {d:19,m:7,grp:'Final',h:'TBC',a:'TBC',t:'TBC',p:'F',sc:null,et:false,ev:[]}
 ];
 const PHASE_LABELS = {GS:'Group',R32:'Last 32',R16:'Round of 16',QF:'Quarter-Final',SF:'Semi-Final','3P':'3rd Place','F':'🏆 FINAL'};
 
@@ -1195,7 +1255,7 @@ function renderStars(rating,size=12){
     else if(d>=0.5) h+="<span class=\"star half\" style=\"font-size:"+size+"px\">☆</span>";
     else h+="<span class=\"star empty\" style=\"font-size:"+size+"px\">★</span>";
   }
-  return h+"<span class=\"rating-score\">"+rating.toFixed(1)+"</span>";
+  return h+"<span class=\"rating-score\">"+(rating||0).toFixed(1)+"</span>";
 }
 
 // ===== UK TIME TO BEIJING =====
@@ -1233,9 +1293,10 @@ function buildCalendar(){
     const isToday = today.getDate()===d && today.getMonth()+1===calMonth && today.getFullYear()===calYear;
     // Find matches by Beijing date
     const dayMatches = [];
-    for(const m of MATCHES){
+    for(let mi=0;mi<MATCHES.length;mi++){
+      const m = MATCHES[mi];
       const bj = ukToBeijing(m.d,m.m,m.t);
-      if(bj.day===d && bj.month===calMonth) dayMatches.push({...m,bjTime:bj.time});
+      if(bj.day===d && bj.month===calMonth) dayMatches.push({...m,bjTime:bj.time,idx:mi});
     }
     let cls = 'calendar-day';
     if(isToday) cls += ' today';
@@ -1250,10 +1311,22 @@ function buildCalendar(){
       const cnA = TEAMS[m.a] ? TEAMS[m.a].zh : m.a;
       const grpLabel = isKO ? PHASE_LABELS[m.p] : m.grp;
       const grpCls = isKO ? 'ko-match' : '';
-      html += '<div class="cal-match '+grpCls+'" onclick="scrollToGroup(\''+m.grp+'\')">';
+      const isTBC = m.h==='TBC'||m.a==='TBC';
+      const hasScore = m.sc && !isTBC;
+      
+      html += '<div class="cal-match '+grpCls+'" onclick="openMatchReport('+m.idx+')">';
       html += '<span class="cm-grp">'+grpLabel+'</span>';
-      html += '<div class="cm-vs-row"><span class="cm-team">'+cnH+'</span><span class="cm-vs-word">VS</span><span class="cm-team">'+cnA+'</span></div>';
-      html += '<div><div class="cm-time">'+m.bjTime+'</div><div class="cm-tz">北京时间</div></div>';
+      if(hasScore){
+        const [hs,as] = m.sc.split('-');
+        html += '<div class="cm-vs-row cm-done"><span class="cm-team cm-scored">'+cnH+' <span class="cm-score-num">'+hs+'</span></span><span class="cm-vs-word">:</span><span class="cm-team cm-scored"><span class="cm-score-num">'+as+'</span> '+cnA+'</span></div>';
+        html += '<div class="cm-status-finished">已结束</div>';
+      } else if(isTBC){
+        html += '<div class="cm-vs-row"><span class="cm-team">待定</span><span class="cm-vs-word">VS</span><span class="cm-team">待定</span></div>';
+        html += '<div class="cm-time tbc">待定</div>';
+      } else {
+        html += '<div class="cm-vs-row"><span class="cm-team">'+cnH+'</span><span class="cm-vs-word">VS</span><span class="cm-team">'+cnA+'</span></div>';
+        html += '<div><div class="cm-time">'+m.bjTime+'</div><div class="cm-tz">北京时间</div></div>';
+      }
       html += '</div>';
     }
     html += '</div></div>';
@@ -1293,15 +1366,49 @@ function renderGroups(){
   const c = document.getElementById('groupsContainer');
   let html = '';
   for(const g of GROUP_DATA){
+    // Calculate standings from MATCHES
+    const standings = g.teams.map(t=>{
+      const td = TEAMS[t]||{zh:t,flag:'🌍',rating:2,reason:''};
+      let pts=0,w=0,d=0,l=0,gf=0,ga=0;
+      for(const m of MATCHES){
+        if(m.h===t && m.sc && m.a!=='TBC'){
+          const [hs,as] = m.sc.split('-').map(Number);
+          gf+=hs; ga+=as;
+          if(hs>as){w++;pts+=3;}
+          else if(hs===as){d++;pts+=1;}
+          else l++;
+        } else if(m.a===t && m.sc && m.h!=='TBC'){
+          const [hs,as] = m.sc.split('-').map(Number);
+          ga+=hs; gf+=as;
+          if(as>hs){w++;pts+=3;}
+          else if(hs===as){d++;pts+=1;}
+          else l++;
+        }
+      }
+      const gd = gf-ga;
+      return {name:t,zh:td.zh,flag:td.flag,rating:td.rating,reason:td.reason,pts,w,d,l,gf,ga,gd};
+    });
+    // Sort: pts > gd > gf
+    standings.sort((a,b)=>{
+      if(b.pts!==a.pts) return b.pts-a.pts;
+      if(b.gd!==a.gd) return b.gd-a.gd;
+      return b.gf-a.gf;
+    });
+    
     html += '<div class="group-card" id="group-'+g.id+'">';
     html += '<div class="group-header">Group '+g.id+'</div><div class="group-body">';
-    g.teams.forEach((t,i)=>{
-      const td = TEAMS[t]||{zh:t,flag:'🌍',rating:2,reason:''};
-      html += '<div class="team-row" onclick="openDetail(\''+t+'\')">';
+    standings.forEach((s,i)=>{
+      html += '<div class="team-row" onclick="openDetail(\''+s.name+'\')">';
       html += '<div class="team-pos">'+(i+1)+'</div><div class="team-info">';
-      html += '<div class="team-name"><span class="flag">'+td.flag+'</span>'+t+' <span class="zh">'+td.zh+'</span><span class="record" id="rec-'+t.replace(/[^a-zA-Z]/g,'')+'">0-0</span></div>';
-      html += '<div class="team-rating">'+renderStars(td.rating)+'</div>';
-      html += '<div class="team-reason">'+td.reason+'</div>';
+      
+      let recStr = '';
+      if(s.w+s.d+s.l>0){
+        recStr = s.pts+'分 '+s.w+'-'+s.d+'-'+s.l+' ('+s.gf+'-'+s.ga+(s.gd>0?' +'+s.gd:s.gd<0?' '+s.gd:'')+')';
+      }
+      
+      html += '<div class="team-name"><span class="flag">'+s.flag+'</span>'+s.name+' <span class="zh">'+s.zh+'</span><span class="record">'+recStr+'</span></div>';
+      html += '<div class="team-rating">'+renderStars(s.rating)+'</div>';
+      html += '<div class="team-reason">'+s.reason+'</div>';
       html += '</div></div>';
     });
     html += '</div></div>';
@@ -1364,22 +1471,46 @@ function openDetail(team){
         const bj = ukToBeijing(m.d,m.m,m.t);
         const dateStr = bj.month+'/'+bj.day;
         const phase = m.p==='GS'?'Group '+m.grp:PHASE_LABELS[m.p];
+        let resultHtml;
+        if(m.sc && opp!=='TBC'){
+          const [hs,as] = m.sc.split('-');
+          const us = isHome?hs:as;
+          const them = isHome?as:hs;
+          if(us>them) resultHtml = '<span class="match-win">'+m.sc+' 胜</span>';
+          else if(us===them) resultHtml = '<span class="match-draw">'+m.sc+' 平</span>';
+          else resultHtml = '<span class="match-loss">'+m.sc+' 负</span>';
+        } else if(opp==='TBC'){resultHtml = '—';}
+        else {resultHtml = '<span class="match-pending">⏳</span>';}
+        
         h += '<tr><td>'+dateStr+'</td><td><span class="match-group">'+phase+'</span></td>';
         h += '<td class="match-vs">'+(isHome?team+' vs '+opp:opp+' vs '+team)+'</td>';
-        h += '<td class="match-draw">—</td>';
+        h += '<td>'+resultHtml+'</td>';
         h += '<td>'+bj.time+'</td></tr>';
       }
       h += '</tbody></table>';
     } else {h += '<p style="color:var(--text-muted);padding:12px">暂无赛程数据</p>';}
     h += '</div>';
     
-    // Stats panel
+    // Stats panel with real data
+    let realW=0,realD=0,realL=0,totalPlayed=0;
+    for(const m of teamMatches){
+      if(m.sc && m.h!=='TBC' && m.a!=='TBC'){
+        totalPlayed++;
+        const isHome = m.h===team;
+        const [hs,as] = m.sc.split('-').map(Number);
+        const us = isHome?hs:as;
+        const them = isHome?as:hs;
+        if(us>them) realW++;
+        else if(us===them) realD++;
+        else realL++;
+      }
+    }
     h += '<div class="detail-panel'+(activeTab==='stats'?' active':'')+'" id="panel-stats">';
     h += '<div class="stats-grid">';
-    h += '<div class="stat-box"><div class="stat-val">'+teamMatches.length+'</div><div class="stat-label">总场次</div></div>';
-    h += '<div class="stat-box"><div class="stat-val">0</div><div class="stat-label">胜</div></div>';
-    h += '<div class="stat-box"><div class="stat-val">0</div><div class="stat-label">平</div></div>';
-    h += '<div class="stat-box"><div class="stat-val">0</div><div class="stat-label">负</div></div>';
+    h += '<div class="stat-box"><div class="stat-val">'+totalPlayed+'</div><div class="stat-label">已赛场次</div></div>';
+    h += '<div class="stat-box"><div class="stat-val">'+realW+'</div><div class="stat-label">胜</div></div>';
+    h += '<div class="stat-box"><div class="stat-val">'+realD+'</div><div class="stat-label">平</div></div>';
+    h += '<div class="stat-box"><div class="stat-val">'+realL+'</div><div class="stat-label">负</div></div>';
     h += '<div class="stat-box"><div class="stat-val">'+td.rating.toFixed(1)+'</div><div class="stat-label">战力评分</div></div>';
     h += '<div class="stat-box"><div class="stat-val">'+squad.length+'</div><div class="stat-label">阵容人数</div></div>';
     h += '</div></div></div>';
@@ -1388,9 +1519,7 @@ function openDetail(team){
   }
   
   window.renderDetailTab = function(t,tabName){
-    const td2 = TEAMS[t]||{zh:t,flag:'🌍',rating:2,reason:''};
-    const squad2 = SQUADS[t]||[];
-    openDetail(t);
+    renderDetail(tabName||'squad');
   };
   
   renderDetail('squad');
@@ -1404,6 +1533,114 @@ function closeDetail(){
   document.getElementById('detailOverlay').classList.remove('active');
   document.body.classList.remove('detail-view');
   if(window.__closeHandler) document.removeEventListener('keydown',__closeHandler);
+}
+
+// ===== MATCH REPORT POPUP =====
+function openMatchReport(idx){
+  const m = MATCHES[idx];
+  if(!m) return;
+  const cnH = TEAMS[m.h] ? TEAMS[m.h].zh : m.h;
+  const cnA = TEAMS[m.a] ? TEAMS[m.a].zh : m.a;
+  const isKO = m.p!=='GS';
+  const grpLabel = isKO ? PHASE_LABELS[m.p] : 'Group '+m.grp;
+  const isTBC = m.h==='TBC'||m.a==='TBC';
+  const hasScore = m.sc && !isTBC;
+  const bj = ukToBeijing(m.d,m.m,m.t);
+  
+  let stars = '';
+  let homeRating = m.h !== 'TBC' && TEAMS[m.h] ? TEAMS[m.h].rating : 0;
+  let awayRating = m.a !== 'TBC' && TEAMS[m.a] ? TEAMS[m.a].rating : 0;
+  
+  let html = '<div class="mr-header">';
+  html += '<div class="mr-teams">';
+  // Home team
+  if(isTBC){
+    html += '<div class="mr-team"><span class="flag">❓</span><span class="name">待定</span></div>';
+  } else {
+    const flH = TEAMS[m.h] ? TEAMS[m.h].flag:'';
+    html += '<div class="mr-team"><span class="flag">'+flH+'</span><span class="name">'+m.h+'</span><span class="zh">'+cnH+'</span></div>';
+  }
+  // Score
+  if(hasScore){
+    html += '<div class="mr-score">'+(m.et ? m.sc.split('-')[0] : m.sc.split('-')[0])+'<span class="mr-colon"> : </span>'+(m.et ? m.sc.split('-')[1] : m.sc.split('-')[1])+'</div>';
+  } else {
+    html += '<div class="mr-score" style="font-size:28px;background:none;color:var(--text-muted);-webkit-text-fill-color:var(--text-muted);"><span>VS</span></div>';
+  }
+  // Away team
+  if(isTBC){
+    html += '<div class="mr-team"><span class="flag">❓</span><span class="name">待定</span></div>';
+  } else {
+    const flA = TEAMS[m.a] ? TEAMS[m.a].flag:'';
+    html += '<div class="mr-team"><span class="flag">'+flA+'</span><span class="name">'+m.a+'</span><span class="zh">'+cnA+'</span></div>';
+  }
+  html += '</div>';
+  if(hasScore){
+    html += '<div class="mr-status">🏁 已结束'+(m.et ? ' · 含加时赛' : '')+'</div>';
+  } else {
+    html += '<div class="mr-status">📅 '+m.d+'/'+m.m+' · '+m.t+' UK → 北京时间 '+bj.time+'</div>';
+  }
+  html += '<div class="mr-group">'+grpLabel+' · Round '+(idx+1)+'/'+MATCHES.length+'</div></div>';
+  
+  // Body
+  html += '<div class="mr-body">';
+  
+  // Events section
+  html += '<div class="mr-section-title">⚡ 比赛事件</div>';
+  if(m.ev && m.ev.length>0){
+    // Sort events by minute
+    const evts = [...m.ev].sort((a,b)=>a.min-b.min);
+    for(const e of evts){
+      const isHome = e.t==='h';
+      const sideCls = isHome ? '' : ' away';
+      html += '<div class="mr-event'+sideCls+'">';
+      html += '<span class="mr-event-time">'+e.min+"'"+'</span>';
+      html += '<span class="mr-event-icon">'+e.ic+'</span>';
+      html += '<span class="mr-event-desc"><span class="player">'+e.p+'</span> · '+e.d+'</span>';
+      html += '</div>';
+    }
+  } else if(hasScore){
+    html += '<div class="mr-empty">暂无详细进球记录</div>';
+  } else if(isTBC){
+    html += '<div class="mr-empty">淘汰赛对阵待定</div>';
+  } else {
+    html += '<div class="mr-empty">⏳ 比赛尚未开始</div>';
+  }
+  
+  // Team lineups & ratings
+  if(!isTBC && SQUADS[m.h] && SQUADS[m.a]){
+    html += '<div class="mr-section-title">🏆 球队战力对比</div>';
+    html += '<div class="mr-lineup-grid">';
+    html += '<div class="mr-lineup-col"><h4>'+cnH+' <span style="font-weight:400;color:var(--text-muted)">('+renderStars(homeRating,16)+')</span></h4><ul>';
+    const squadH = SQUADS[m.h];
+    for(let i=0;i<Math.min(7,squadH.length);i++){
+      const p = squadH[i];
+      html += '<li><span class="pos-tag pos-'+p.p+'">'+p.p+'</span>'+p.n+'</li>';
+    }
+    html += '</ul></div>';
+    html += '<div class="mr-lineup-col"><h4>'+cnA+' <span style="font-weight:400;color:var(--text-muted)">('+renderStars(awayRating,16)+')</span></h4><ul>';
+    const squadA = SQUADS[m.a];
+    for(let i=0;i<Math.min(7,squadA.length);i++){
+      const p = squadA[i];
+      html += '<li><span class="pos-tag pos-'+p.p+'">'+p.p+'</span>'+p.n+'</li>';
+    }
+    html += '</ul></div>';
+    html += '</div>';
+  }
+  
+  html += '</div>'; // end body
+  
+  document.getElementById('matchReportContent').innerHTML = html;
+  document.getElementById('matchReportOverlay').classList.add('active');
+  
+  // Close handler
+  const overlay = document.getElementById('matchReportOverlay');
+  overlay.onclick = function(e){if(e.target===overlay) closeMatchReport();};
+  document.addEventListener('keydown', window.__mrCloseHandler = function(e){if(e.key==='Escape') closeMatchReport();});
+}
+
+function closeMatchReport(){
+  document.getElementById('matchReportOverlay').classList.remove('active');
+  if(window.__mrCloseHandler) document.removeEventListener('keydown', window.__mrCloseHandler);
 }
 
 // ===== INIT =====
