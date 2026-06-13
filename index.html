@@ -54,6 +54,10 @@ body.detail-view{overflow:hidden}
 .cal-match .cm-score-num.cm-sn-right{padding-left:1px}
 .cal-match .cm-vs-word-score{font-size:12px;font-weight:700;color:#e74c3c;padding:0 0}
 .cal-match .cm-status-finished{font-size:9px;color:#27ae60;font-weight:600;margin-top:2px;letter-spacing:0.5px;text-align:center}
+.cal-match .cm-status-live{font-size:9px;color:#f39c12;font-weight:700;margin-top:2px;text-align:center;animation:pulse-live 1.5s ease-in-out infinite}
+@keyframes pulse-live{0%,100%{opacity:1}50%{opacity:0.5}}
+.cal-match .cm-vs-row.cm-done.cm-live .cm-score-block{background:rgba(243,156,18,0.2);border:1px solid rgba(243,156,18,0.3)}
+.cal-match .cm-vs-row.cm-done.cm-live .cm-score-num{color:#f39c12}
 .cal-match .tbc{font-size:9px;color:var(--text-dim)}
 .cal-match.ko-match{background:rgba(192,57,43,0.1)}
 .cal-match.ko-match .cm-grp{color:var(--accent-red)}
@@ -261,8 +265,8 @@ body.detail-view{overflow:hidden}
 const MATCHES = [
   // ===== GROUP STAGE - MATCHDAY 1 =====
   // Round 1: June 11-17 (UK time)
-  {d:11,m:6,grp:'A',h:'Mexico',a:'South Africa',t:'20:00',p:'GS',sc:'2-1',et:false,ev:[{min:23,t:'h',p:'Raúl Jiménez',ic:'⚽',d:'希门尼斯抢点头球破门，墨西哥1-0领先'},{min:45+2,t:'a',p:'Percy Tau',ic:'⚽',d:'塔乌补射破门，南非扳平比分'},{min:78,t:'h',p:'Hirving Lozano',ic:'⚽',d:'洛萨诺内切远射直挂死角，墨西哥再次领先'}]},
-  {d:12,m:6,grp:'A',h:'South Korea',a:'Czech Republic',t:'03:00',p:'GS',sc:'1-0',et:false,ev:[{min:67,t:'h',p:'Son Heung-min',ic:'⚽',d:'孙兴慜禁区外远射破网，韩国1-0捷克'}]},
+  {d:11,m:6,grp:'A',h:'Mexico',a:'South Africa',t:'20:00',p:'GS',sc:'2-1',st:'f',et:false,ev:[{min:23,t:'h',p:'Raúl Jiménez',ic:'⚽',d:'希门尼斯抢点头球破门，墨西哥1-0领先'},{min:45+2,t:'a',p:'Percy Tau',ic:'⚽',d:'塔乌补射破门，南非扳平比分'},{min:78,t:'h',p:'Hirving Lozano',ic:'⚽',d:'洛萨诺内切远射直挂死角，墨西哥再次领先'}]},
+  {d:12,m:6,grp:'A',h:'South Korea',a:'Czech Republic',t:'03:00',p:'GS',sc:'1-0',st:'f',et:false,ev:[{min:67,t:'h',p:'Son Heung-min',ic:'⚽',d:'孙兴慜禁区外远射破网，韩国1-0捷克'}]},
   {d:12,m:6,grp:'B',h:'Canada',a:'Bosnia and Herzegovina',t:'20:00',p:'GS',sc:null,et:false,ev:[]},
   {d:13,m:6,grp:'B',h:'Qatar',a:'Switzerland',t:'20:00',p:'GS',sc:null,et:false,ev:[]},
   {d:13,m:6,grp:'C',h:'Brazil',a:'Morocco',t:'23:00',p:'GS',sc:null,et:false,ev:[]},
@@ -1281,6 +1285,20 @@ function ukToBeijing(day,month,timeStr){
   return{day:bjDay,month:bjMonth,time:String(newH).padStart(2,"0")+":"+String(newM).padStart(2,"0")};
 }
 
+// ===== LIVE MATCH DETECTION =====
+function isLiveMatch(m){
+  if(!m.sc) return false;           // no score = upcoming
+  if(m.st==='f') return false;      // explicitly finished
+  if(m.st==='l') return true;       // explicitly live
+  // Auto-detect from time: if BJT is within match window (2.5h from kickoff)
+  const bj = ukToBeijing(m.d,m.m,m.t);
+  const [hh,mm] = bj.time.split(':').map(Number);
+  const kickoff = new Date(2026, bj.month-1, bj.day, hh, mm);
+  const now = new Date();
+  const elapsed = (now - kickoff) / 60000; // minutes since kickoff
+  return elapsed >= 0 && elapsed < 155;     // 0-155 min = match window (~2h35m)
+}
+
 // ===== CALENDAR =====
 let calMonth = 6, calYear = 2026;
 
@@ -1325,8 +1343,9 @@ function buildCalendar(){
       html += '<span class="cm-grp">'+grpLabel+'</span>';
       if(hasScore){
         const [hs,as] = m.sc.split('-');
-        html += '<div class="cm-vs-row cm-done"><span class="cm-team cm-team-left">'+cnH+'</span><span class="cm-score-block"><span class="cm-score-num cm-sn-left">'+hs+'</span><span class="cm-vs-word-score">:</span><span class="cm-score-num cm-sn-right">'+as+'</span></span><span class="cm-team cm-team-right">'+cnA+'</span></div>';
-        html += '<div class="cm-status-finished">已结束</div>';
+        const isLive = isLiveMatch(m);
+        html += '<div class="cm-vs-row cm-done'+(isLive?' cm-live':'')+'"><span class="cm-team cm-team-left">'+cnH+'</span><span class="cm-score-block"><span class="cm-score-num cm-sn-left">'+hs+'</span><span class="cm-vs-word-score">:</span><span class="cm-score-num cm-sn-right">'+as+'</span></span><span class="cm-team cm-team-right">'+cnA+'</span></div>';
+        html += '<div class="cm-status-'+(isLive?'live':'finished')+'">'+((isLive?'🔴 进行中':'已结束'))+'</div>';
       } else if(isTBC){
         html += '<div class="cm-vs-row"><span class="cm-team">待定</span><span class="cm-vs-word">VS</span><span class="cm-team">待定</span></div>';
         html += '<div class="cm-time tbc">待定</div>';
@@ -1582,7 +1601,8 @@ function openMatchReport(idx){
   }
   html += '</div>';
   if(hasScore){
-    html += '<div class="mr-status">🏁 已结束'+(m.et ? ' · 含加时赛' : '')+'</div>';
+    const isLive = isLiveMatch(m);
+    html += '<div class="mr-status">'+(isLive?'🔴 进行中':'🏁 已结束')+(m.et && !isLive?' · 含加时赛':'')+'</div>';
   } else {
     html += '<div class="mr-status">📅 '+m.d+'/'+m.m+' · '+m.t+' UK → 北京时间 '+bj.time+'</div>';
   }

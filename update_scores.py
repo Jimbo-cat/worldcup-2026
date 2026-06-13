@@ -105,6 +105,42 @@ def normalize(name):
     return n.lower().replace(" ", "").replace("-", "").replace("'", "")
 
 
+def uk_to_beijing(day, month, time_str):
+    """Convert UK time (BST, UTC+1) to Beijing time (UTC+8)"""
+    h, m = map(int, time_str.split(':'))
+    total = h * 60 + m + 7 * 60  # +7h from UTC+1 to UTC+8
+    new_days, rem = divmod(total, 1440)
+    new_h, new_min = divmod(rem, 60)
+    bj_day = day + new_days
+    bj_month = month
+    import calendar
+    dim = calendar.monthrange(2026, bj_month)[1]
+    if bj_day > dim:
+        bj_day -= dim
+        bj_month += 1
+    return {
+        'day': bj_day,
+        'month': bj_month,
+        'time': f"{new_h:02d}:{new_min:02d}"
+    }
+
+
+def determine_status(d, m, t):
+    """判断比赛状态: 'l'=进行中, 'f'=已结束"""
+    bj = uk_to_beijing(d, m, t)
+    kickoff = datetime(2026, bj['month'], bj['day'],
+                       int(bj['time'].split(':')[0]),
+                       int(bj['time'].split(':')[1]),
+                       tzinfo=BJ_TZ)
+    now = datetime.now(BJ_TZ)
+    minutes_since = (now - kickoff).total_seconds() / 60
+    if minutes_since < 0:
+        return 'u'  # 还未开始（不应有比分）
+    elif minutes_since < 155:  # ~2h35m = 90min + 15min中场 + 30min加时
+        return 'l'  # 进行中
+    return 'f'  # 已结束
+
+
 # ========== 核心 ==========
 
 def update():
@@ -141,12 +177,12 @@ def update():
         score_map[(n1, n2)] = sc
         score_map[(n2, n1)] = sc
 
-    # 逐场替换 sc:null → sc:'X-Y'
+    # 逐场替换 sc:null → sc:'X-Y',st:'l/f'
     updated = 0
     lines = html.split("\n")
     new_lines = []
     pattern = re.compile(
-        r"^(.*h:'([^']+)',a:'([^']+)'.*?)sc:null(.*)$"
+        r"^(.*?d:(\d+),m:(\d+),.*?t:'([^']+)'.*?)sc:null(.*)$"
     )
 
     for line in lines:
@@ -154,19 +190,28 @@ def update():
         if not m:
             new_lines.append(line)
             continue
-        prefix, hteam, ateam, suffix = m.group(1), m.group(2), m.group(3), m.group(4)
+        prefix, day_str, month_str, time_str, suffix = (
+            m.group(1), int(m.group(2)), int(m.group(3)),
+            m.group(4), m.group(5)
+        )
+        # Extract hteam/ateam from prefix for matching
+        tm = re.search(r"h:'([^']+)',a:'([^']+)'", prefix)
+        if not tm:
+            new_lines.append(line)
+            continue
+        hteam, ateam = tm.group(1), tm.group(2)
         nh, na = normalize(hteam), normalize(ateam)
         key = (nh, na)
         if key in score_map:
-            # 检查不是已经在注释（被注释掉的比赛行）
             if line.strip().startswith("//"):
                 new_lines.append(line)
                 continue
             sc = score_map[key]
-            new_line = f"{prefix}sc:'{sc}',et:false,ev:[]" + suffix
+            st = determine_status(day_str, month_str, time_str)
+            new_line = f"{prefix}sc:'{sc}',st:'{st}',et:false,ev:[]" + suffix
             new_lines.append(new_line)
             updated += 1
-            print(f"  📝 {hteam} vs {ateam}: → {sc}")
+            print(f"  📝 {hteam} vs {ateam}: {sc} ({st=='l' and '🔴进行中' or '✅已结束'})")
         else:
             new_lines.append(line)
 
