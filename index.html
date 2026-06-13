@@ -126,8 +126,8 @@ body.detail-view{overflow:hidden}
 .mr-teams{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:0 20px}
 .mr-team{text-align:center;min-width:100px}
 .mr-team .flag{font-size:40px;display:block}
-.mr-team .name{font-size:18px;font-weight:700;margin-top:6px}
-.mr-team .zh{font-size:14px;color:var(--text-muted);font-weight:400}
+.mr-team .name{font-size:18px;font-weight:700;margin-top:6px;display:block}
+.mr-team .zh{font-size:14px;color:var(--text-muted);font-weight:400;display:block}
 .mr-score{font-size:48px;font-weight:900;background:linear-gradient(135deg,var(--gold),var(--gold-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:4px}
 .mr-score .mr-colon{-webkit-text-fill-color:var(--text-muted);color:var(--text-muted)}
 .mr-status{font-size:13px;color:var(--text-muted);margin-top:6px}
@@ -1581,10 +1581,10 @@ function openMatchReport(idx){
   html += '<div class="mr-teams">';
   // Home team
   if(isTBC){
-    html += '<div class="mr-team"><span class="flag">❓</span><span class="name">待定</span></div>';
+    html += '<div class="mr-team"><span class="flag">❓</span><span class="zh">待定</span><span class="name">TBD</span></div>';
   } else {
     const flH = TEAMS[m.h] ? TEAMS[m.h].flag:'';
-    html += '<div class="mr-team"><span class="flag">'+flH+'</span><span class="name">'+m.h+'</span><span class="zh">'+cnH+'</span></div>';
+    html += '<div class="mr-team"><span class="flag">'+flH+'</span><span class="zh">'+cnH+'</span><span class="name">'+m.h+'</span></div>';
   }
   // Score
   if(hasScore){
@@ -1594,10 +1594,10 @@ function openMatchReport(idx){
   }
   // Away team
   if(isTBC){
-    html += '<div class="mr-team"><span class="flag">❓</span><span class="name">待定</span></div>';
+    html += '<div class="mr-team"><span class="flag">❓</span><span class="zh">待定</span><span class="name">TBD</span></div>';
   } else {
     const flA = TEAMS[m.a] ? TEAMS[m.a].flag:'';
-    html += '<div class="mr-team"><span class="flag">'+flA+'</span><span class="name">'+m.a+'</span><span class="zh">'+cnA+'</span></div>';
+    html += '<div class="mr-team"><span class="flag">'+flA+'</span><span class="zh">'+cnA+'</span><span class="name">'+m.a+'</span></div>';
   }
   html += '</div>';
   if(hasScore){
