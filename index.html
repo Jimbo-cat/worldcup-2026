@@ -85,7 +85,9 @@ body.detail-view{overflow:hidden}
 .team-name{font-size:14px;font-weight:700;color:var(--text);display:flex;align-items:baseline;gap:4px;flex-wrap:wrap}
 .team-name .flag{font-size:16px}
 .team-name .zh{font-weight:400;color:var(--text-muted);font-size:12px}
-.team-name .record{font-size:12px;color:var(--text-dim);font-weight:500;margin-left:auto}
+.team-name .record{font-size:12px;color:var(--text-dim);font-weight:500;margin-left:auto;display:inline-flex;gap:4px;align-items:baseline}
+.rec-pts{font-weight:700;color:#e74c3c}
+.rec-gd{color:#e8edf5}
 .team-rating{display:flex;align-items:center;gap:1px;margin-top:2px}
 .star{color:var(--gold);font-size:12px;line-height:1}
 .star.empty{color:#3a4a5a}
@@ -1429,7 +1431,8 @@ function renderGroups(){
       
       let recStr = '';
       if(s.w+s.d+s.l>0){
-        recStr = s.pts+'分 '+s.w+'-'+s.d+'-'+s.l+' ('+s.gf+'-'+s.ga+(s.gd>0?' +'+s.gd:s.gd<0?' '+s.gd:'')+')';
+        const gdStr = s.gd>0?' +'+s.gd:s.gd<0?' '+s.gd:'';
+        recStr = '<span class="rec-pts">'+s.pts+'分</span><span class="rec-rec"> '+s.w+'-'+s.d+'-'+s.l+' </span><span class="rec-gd">('+s.gf+'-'+s.ga+gdStr+')</span>';
       }
       
       html += '<div class="team-name"><span class="flag">'+s.flag+'</span>'+s.name+' <span class="zh">'+s.zh+'</span><span class="record">'+recStr+'</span></div>';
