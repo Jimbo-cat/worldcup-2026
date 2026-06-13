@@ -44,8 +44,15 @@ body.detail-view{overflow:hidden}
 .cal-match .cm-vs-row .cm-vs-word{font-size:10px;font-weight:700;color:var(--gold);flex-shrink:0;padding:0 3px}
 .cal-match .cm-time{font-size:11px;font-weight:700;color:var(--gold-light);text-align:right;line-height:1.2}
 .cal-match .cm-tz{font-size:7px;color:var(--text-dim);text-align:right;line-height:1}
-.cal-match .cm-done .cm-team{font-size:10px;font-weight:600;display:flex;align-items:center;gap:2px}
-.cal-match .cm-score-num{font-size:13px;font-weight:900;color:#e74c3c;display:inline-block}
+.cal-match .cm-vs-row.cm-done{display:flex;align-items:center;justify-content:space-between}
+.cal-match .cm-team.cm-team-left,.cal-match .cm-team.cm-team-right{font-size:10px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-match .cm-team.cm-team-left{text-align:right;flex:1.5;padding-right:4px}
+.cal-match .cm-team.cm-team-right{text-align:left;flex:1.5;padding-left:4px}
+.cal-match .cm-score-block{display:inline-flex;align-items:center;gap:0;flex-shrink:0;background:rgba(231,76,60,0.12);padding:0 6px;border-radius:4px;line-height:1.3}
+.cal-match .cm-score-num{font-size:14px;font-weight:900;color:#e74c3c}
+.cal-match .cm-score-num.cm-sn-left{padding-right:1px}
+.cal-match .cm-score-num.cm-sn-right{padding-left:1px}
+.cal-match .cm-vs-word-score{font-size:12px;font-weight:700;color:#e74c3c;padding:0 0}
 .cal-match .cm-status-finished{font-size:9px;color:#27ae60;font-weight:600;margin-top:2px;letter-spacing:0.5px;text-align:center}
 .cal-match .tbc{font-size:9px;color:var(--text-dim)}
 .cal-match.ko-match{background:rgba(192,57,43,0.1)}
@@ -1318,7 +1325,7 @@ function buildCalendar(){
       html += '<span class="cm-grp">'+grpLabel+'</span>';
       if(hasScore){
         const [hs,as] = m.sc.split('-');
-        html += '<div class="cm-vs-row cm-done"><span class="cm-team cm-scored">'+cnH+' <span class="cm-score-num">'+hs+'</span></span><span class="cm-vs-word">:</span><span class="cm-team cm-scored"><span class="cm-score-num">'+as+'</span> '+cnA+'</span></div>';
+        html += '<div class="cm-vs-row cm-done"><span class="cm-team cm-team-left">'+cnH+'</span><span class="cm-score-block"><span class="cm-score-num cm-sn-left">'+hs+'</span><span class="cm-vs-word-score">:</span><span class="cm-score-num cm-sn-right">'+as+'</span></span><span class="cm-team cm-team-right">'+cnA+'</span></div>';
         html += '<div class="cm-status-finished">已结束</div>';
       } else if(isTBC){
         html += '<div class="cm-vs-row"><span class="cm-team">待定</span><span class="cm-vs-word">VS</span><span class="cm-team">待定</span></div>';
