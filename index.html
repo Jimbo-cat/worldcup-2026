@@ -123,7 +123,7 @@ body.detail-view{overflow:hidden}
 .match-report-close{position:sticky;top:0;float:right;background:rgba(200,169,96,0.1);border:1px solid rgba(200,169,96,0.2);color:var(--gold);width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;margin:10px;transition:all .15s}
 .match-report-close:hover{background:rgba(200,169,96,0.25)}
 .mr-header{padding:28px 28px 16px;text-align:center;background:linear-gradient(135deg,#1d2d3d,#253545);border-bottom:2px solid var(--gold)}
-.mr-teams{display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap}
+.mr-teams{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:0 20px}
 .mr-team{text-align:center;min-width:100px}
 .mr-team .flag{font-size:40px;display:block}
 .mr-team .name{font-size:18px;font-weight:700;margin-top:6px}
@@ -267,10 +267,10 @@ const MATCHES = [
   // Round 1: June 11-17 (UK time)
   {d:11,m:6,grp:'A',h:'Mexico',a:'South Africa',t:'20:00',p:'GS',sc:'2-1',st:'f',et:false,ev:[{min:23,t:'h',p:'Raúl Jiménez',ic:'⚽',d:'希门尼斯抢点头球破门，墨西哥1-0领先'},{min:45+2,t:'a',p:'Percy Tau',ic:'⚽',d:'塔乌补射破门，南非扳平比分'},{min:78,t:'h',p:'Hirving Lozano',ic:'⚽',d:'洛萨诺内切远射直挂死角，墨西哥再次领先'}]},
   {d:12,m:6,grp:'A',h:'South Korea',a:'Czech Republic',t:'03:00',p:'GS',sc:'1-0',st:'f',et:false,ev:[{min:67,t:'h',p:'Son Heung-min',ic:'⚽',d:'孙兴慜禁区外远射破网，韩国1-0捷克'}]},
-  {d:12,m:6,grp:'B',h:'Canada',a:'Bosnia and Herzegovina',t:'20:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:12,m:6,grp:'B',h:'Canada',a:'Bosnia and Herzegovina',t:'20:00',p:'GS',sc:'1-1',st:'f',et:false,ev:[{min:38,t:'a',p:'Edin Džeko',ic:'⚽',d:'哲科禁区抢点破门，加拿大0-1波黑'},{min:88,t:'h',p:'Cyle Larin',ic:'⚽',d:'拉林第88分钟扳平，加拿大1-1波黑续命'}]},
   {d:13,m:6,grp:'B',h:'Qatar',a:'Switzerland',t:'20:00',p:'GS',sc:null,et:false,ev:[]},
   {d:13,m:6,grp:'C',h:'Brazil',a:'Morocco',t:'23:00',p:'GS',sc:null,et:false,ev:[]},
-  {d:13,m:6,grp:'D',h:'United States',a:'Paraguay',t:'02:00',p:'GS',sc:null,et:false,ev:[]},
+  {d:13,m:6,grp:'D',h:'United States',a:'Paraguay',t:'02:00',p:'GS',sc:'4-1',st:'f',et:false,ev:[{min:12,t:'h',p:'Christian Pulisic',ic:'⚽',d:'普利西奇开场12分钟远射破门！美国1-0巴拉圭'},{min:35,t:'a',p:'Miguel Almirón',ic:'⚽',d:'阿尔米龙单刀扳平，巴拉圭1-1美国'},{min:51,t:'h',p:'Weston McKennie',ic:'⚽',d:'麦肯尼头球补射，美国2-1再度领先'},{min:73,t:'h',p:'Tim Weah',ic:'⚽',d:'维阿单刀冷静推射远角，美国3-1扩大比分'},{min:90+3,t:'h',p:'Folarin Balogun',ic:'⚽',d:'巴洛贡补时最后一分钟破门，美国4-1锁定胜局'}]},
   {d:14,m:6,grp:'C',h:'Haiti',a:'Scotland',t:'02:00',p:'GS',sc:null,et:false,ev:[]},
   {d:14,m:6,grp:'D',h:'Australia',a:'Turkey',t:'05:00',p:'GS',sc:null,et:false,ev:[]},
   {d:14,m:6,grp:'E',h:'Germany',a:'Curacao',t:'18:00',p:'GS',sc:null,et:false,ev:[]},
