@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
-  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
@@ -10,8 +9,6 @@
         <string>/usr/bin/python3</string>
         <string>/Users/zhengbo/workspace/worldcup-2026/update_scores.py</string>
     </array>
-    <key>WorkingDirectory</key>
-    <string>/Users/zhengbo/workspace/worldcup-2026</string>
     <key>EnvironmentVariables</key>
     <dict>
         <key>HTTP_PROXY</key>
@@ -19,16 +16,13 @@
         <key>HTTPS_PROXY</key>
         <string>http://127.0.0.1:7897</string>
     </dict>
+    <key>StartInterval</key>
+    <integer>3600</integer>
     <key>StandardOutPath</key>
     <string>/tmp/wc-update.log</string>
     <key>StandardErrorPath</key>
     <string>/tmp/wc-update.log</string>
-    <key>StartCalendarInterval</key>
-    <array>
-        <dict>
-            <key>Minute</key>
-            <integer>0</integer>
-        </dict>
-    </array>
+    <key>RunAtLoad</key>
+    <true/>
 </dict>
 </plist>

@@ -7,7 +7,6 @@
 
 import re
 import os
-import sys
 import json
 import subprocess
 import urllib.request
@@ -18,13 +17,6 @@ from html import unescape
 WORKDIR = os.path.dirname(os.path.abspath(__file__))
 HTML_FILE = os.path.join(WORKDIR, "index.html")
 BJ_TZ = timezone(timedelta(hours=8))
-
-# Wikipedia group section indices (0-indexed from parse API)
-GROUP_SECTIONS = {
-    'A': 20, 'B': 21, 'C': 22, 'D': 23,
-    'E': 24, 'F': 25, 'G': 26, 'H': 27, 'I': 28, 'J': 29,
-    'K': 30, 'L': 31
-}
 
 # Proxy config (Clash Verge on 7897)
 PROXY = "http://127.0.0.1:7897"
@@ -49,40 +41,34 @@ def fetch_json(url, timeout=20):
 
 # ========== Wikipedia API ==========
 
-def fetch_group_section(grp_letter):
-    """Fetch a group section's parsed HTML from Wikipedia API."""
-    idx = GROUP_SECTIONS.get(grp_letter)
-    if not idx:
-        return None
-    url = (f"https://en.wikipedia.org/w/api.php?"
-           f"action=parse&page=2026_FIFA_World_Cup&prop=text&section={idx}&format=json")
+def fetch_full_page():
+    """Fetch the entire parsed 2026 World Cup page HTML in one API call."""
+    url = ("https://en.wikipedia.org/w/api.php?"
+           "action=parse&page=2026_FIFA_World_Cup&prop=text&format=json")
     data = fetch_json(url)
     if data and 'parse' in data and 'text' in data['parse']:
         return data['parse']['text']['*']
     return None
 
 
-def extract_scores_from_section(html):
-    """Parse football boxes from a group section HTML.
-    Returns dict: normalized_team_key -> {score: str, events: list}
+def extract_all_scores(html):
+    """Parse ALL football boxes from the full page HTML.
+    Returns dict of norm_teamkey -> {'score': str, 'events': list}
     """
     results = {}
 
-    # Find all football boxes
+    # Find all football boxes across the entire page
     boxes = re.findall(
         r'<div[^>]*class="footballbox"[^>]*>.*?</div>\s*</div>\s*</div>',
         html, re.DOTALL
     )
 
     for box in boxes:
-        # Extract home/away team names
         home_m = re.search(
-            r'<th class="fhome"[^>]*>.*?<a[^>]*>([^<]+)</a>',
-            box, re.DOTALL
+            r'<th class="fhome"[^>]*>.*?<a[^>]*>([^<]+)</a>', box, re.DOTALL
         )
         away_m = re.search(
-            r'<th class="faway"[^>]*>.*?<a[^>]*>([^<]+)</a>',
-            box, re.DOTALL
+            r'<th class="faway"[^>]*>.*?<a[^>]*>([^<]+)</a>', box, re.DOTALL
         )
         if not home_m or not away_m:
             continue
@@ -90,14 +76,16 @@ def extract_scores_from_section(html):
         home = unescape(home_m.group(1).strip())
         away = unescape(away_m.group(1).strip())
 
-        # Extract score: "7–1" format (en-dash) or "Match N" (not yet played)
-        score_m = re.search(r'<th class="fscore">.*?(\d+)–(\d+).*?</th>', box, re.DOTALL)
+        # Score or "Match N"
+        score_m = re.search(
+            r'<th class="fscore">.*?(\d+)–(\d+).*?</th>', box, re.DOTALL
+        )
         if not score_m:
-            continue  # "Match N" = not played yet
+            continue
 
         score = f"{score_m.group(1)}-{score_m.group(2)}"
 
-        # Extract goal events
+        # Goals
         events = []
         fgoals = re.search(r'<tr class="fgoals">(.*?)</tr>', box, re.DOTALL)
         if fgoals:
@@ -105,22 +93,15 @@ def extract_scores_from_section(html):
             for item in items:
                 name_m = re.search(r'title="([^"]+)"', item)
                 times = re.findall(r'<span[^>]*>(\d+\+?\d*)', item)
-                is_pen = 'pen.' in item or 'penalty' in item.lower()
-                is_og = 'own goal' in item.lower()
                 if name_m and times:
-                    ev = {
+                    events.append({
                         'player': unescape(name_m.group(1)),
                         'minute': times[0],
-                        'pen': is_pen,
-                        'og': is_og,
-                    }
-                    events.append(ev)
+                    })
 
         key = normalize(f"{home}_{away}")
-        results[key] = {'score': score, 'events': events}
-
-        # Also store with away_home key for reverse lookup
         rkey = normalize(f"{away}_{home}")
+        results[key] = {'score': score, 'events': events}
         results[rkey] = {'score': score, 'events': events, 'reversed': True}
 
     return results
@@ -153,13 +134,6 @@ TEAM_ALIASES = {
 def normalize(name):
     n = TEAM_ALIASES.get(name, name)
     return re.sub(r'[^a-z0-9]', '', n.lower())
-
-
-def match_team_name(html_name, wiki_name):
-    """Check if an HTML team name matches a Wikipedia team name."""
-    n1 = normalize(html_name)
-    n2 = normalize(wiki_name)
-    return n1 == n2 or (len(n1) >= 4 and n1 == n2)
 
 
 # ========== Time utils ==========
@@ -247,27 +221,15 @@ def update():
     print("\n📡 正在从 Wikipedia 获取赛果...")
     all_wiki_scores = {}
 
-    import time
-    groups_used = set()
-    for idx, home, away, day, month, t_str in all_matches:
-        # Find which group this match belongs to
-        line = html_lines[idx]
-        grp_m = re.search(r"grp:'([A-Z])'", line)
-        if not grp_m:
-            continue
-        grp = grp_m.group(1)
-        if grp in groups_used:
-            continue
-        groups_used.add(grp)
-        print(f"   正在解析 {grp} 组...", end=' ')
-        html = fetch_group_section(grp)
-        if html:
-            scores = extract_scores_from_section(html)
-            all_wiki_scores.update(scores)
-            print(f"获取到 {len(scores)} 场比赛数据")
-        else:
-            print("⚠ 获取失败")
-        time.sleep(1)  # 避免 API 限流
+    # 单次请求获取整个页面 → 解析所有 football box
+    print("  正在获取完整页面...", end=' ')
+    full_html = fetch_full_page()
+    if full_html:
+        print(f"成功 ({len(full_html)} chars)")
+        all_wiki_scores = extract_all_scores(full_html)
+        print(f"  Wikipedia: 解析到 {len(all_wiki_scores)} 场比赛数据")
+    else:
+        print("⚠ 获取失败")
 
     if not all_wiki_scores:
         print("  ⚠ Wikipedia 未返回任何比赛数据")
