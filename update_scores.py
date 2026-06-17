@@ -321,17 +321,25 @@ def determine_status(day, month, time_str):
     # UK is BST = UTC+1
     uk_now = now_utc.astimezone(timezone(timedelta(hours=1)))
 
+    # Handle day rollover for end time (match starts late, ends next day)
     end_minutes = start_minutes + 120
+    end_day_offset = end_minutes // (24 * 60)
+    end_minutes = end_minutes % (24 * 60)
 
     try:
-        match_start = uk_now.replace(hour=start_minutes // 60, minute=start_minutes % 60, second=0, microsecond=0)
-        match_end = uk_now.replace(hour=end_minutes // 60, minute=end_minutes % 60, second=0, microsecond=0)
-    except ValueError:
-        return 'u'
+        match_start = uk_now.replace(
+            hour=start_minutes // 60,
+            minute=start_minutes % 60,
+            second=0, microsecond=0,
+        ).replace(day=day, month=month)
 
-    # Adjust for day difference
-    match_start = match_start.replace(day=day, month=month)
-    match_end = match_end.replace(day=day, month=month)
+        match_end = uk_now.replace(
+            hour=end_minutes // 60,
+            minute=end_minutes % 60,
+            second=0, microsecond=0,
+        ).replace(day=day + end_day_offset, month=month)
+    except (ValueError, OverflowError):
+        return 'u'
 
     if match_end < uk_now:
         return 'f'
