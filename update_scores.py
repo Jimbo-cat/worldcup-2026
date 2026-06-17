@@ -51,9 +51,91 @@ def fetch_full_page():
     return None
 
 
+def parse_event_item(item, side):
+    """Parse a single <li> event item from a football box goals cell."""
+    name_m = re.search(r'title="([^"]+)"', item)
+    if not name_m:
+        return None
+    times = re.findall(r'<span[^>]*>(\d+\+?\d*)', item)
+    if not times:
+        return None
+
+    player = unescape(name_m.group(1))
+    minute = times[0]
+    penalty = bool(re.search(r'class="penalty"', item))
+    own_goal = bool(re.search(r'class="own-goal"', item))
+
+    return {
+        'player': player,
+        'minute': minute,
+        'side': side,
+        'penalty': penalty,
+        'own_goal': own_goal,
+    }
+
+
+def generate_html_events(events):
+    """Convert Wikipedia events to HTML JS object literal format.
+
+    Returns a string like:
+    [{min:10,t:'h',p:'Player',ic:'⚽',d:'...'},{...}]
+    Returns '[]' for empty/no events.
+    """
+    if not events:
+        return "[]"
+
+    # Sort by minute
+    sorted_ev = sorted(
+        events,
+        key=lambda e: (
+            int(e['minute'].split('+')[0])
+            if '+' in e['minute']
+            else int(e['minute'])
+        ),
+    )
+
+    home_goals = 0
+    away_goals = 0
+    parts = []
+
+    for ev in sorted_ev:
+        if ev['side'] == 'h':
+            home_goals += 1
+        else:
+            away_goals += 1
+        current_score = f"{home_goals}-{away_goals}"
+
+        # Icon
+        if ev['own_goal']:
+            ic = '⚽(og)'
+        elif ev['penalty']:
+            ic = '⚽(P)'
+        else:
+            ic = '⚽'
+
+        # Chinese description
+        if ev['own_goal']:
+            desc = f"{ev['player']} 乌龙球，比分 {current_score}"
+        elif ev['penalty']:
+            desc = f"{ev['player']} 点球命中，比分 {current_score}"
+        else:
+            desc = f"{ev['player']} 破门，比分 {current_score}"
+
+        p_esc = ev['player'].replace("'", "\\'")
+        d_esc = desc.replace("'", "\\'")
+
+        parts.append(
+            f"{{min:{ev['minute']},t:'{ev['side']}',"
+            f"p:'{p_esc}',ic:'{ic}',d:'{d_esc}'}}"
+        )
+
+    return "[" + ",".join(parts) + "]"
+
+
 def extract_all_scores(html):
     """Parse ALL football boxes from the full page HTML.
     Returns dict of norm_teamkey -> {'score': str, 'events': list}
+    Now extracts richer event data (side, penalty, own_goal).
     """
     results = {}
 
@@ -76,7 +158,7 @@ def extract_all_scores(html):
         home = unescape(home_m.group(1).strip())
         away = unescape(away_m.group(1).strip())
 
-        # Score or "Match N"
+        # Score
         score_m = re.search(
             r'<th class="fscore">.*?(\d+)–(\d+).*?</th>', box, re.DOTALL
         )
@@ -85,19 +167,33 @@ def extract_all_scores(html):
 
         score = f"{score_m.group(1)}-{score_m.group(2)}"
 
-        # Goals
+        # Goals with side detection
         events = []
         fgoals = re.search(r'<tr class="fgoals">(.*?)</tr>', box, re.DOTALL)
         if fgoals:
-            items = re.findall(r'<li>(.*?)</li>', fgoals.group(1), re.DOTALL)
-            for item in items:
-                name_m = re.search(r'title="([^"]+)"', item)
-                times = re.findall(r'<span[^>]*>(\d+\+?\d*)', item)
-                if name_m and times:
-                    events.append({
-                        'player': unescape(name_m.group(1)),
-                        'minute': times[0],
-                    })
+            home_goals = re.search(
+                r'<td[^>]*class="fhgoal"[^>]*>(.*?)</td>',
+                fgoals.group(1), re.DOTALL,
+            )
+            if home_goals:
+                for item in re.findall(
+                    r'<li>(.*?)</li>', home_goals.group(1), re.DOTALL
+                ):
+                    ev = parse_event_item(item, 'h')
+                    if ev:
+                        events.append(ev)
+
+            away_goals = re.search(
+                r'<td[^>]*class="fagoal"[^>]*>(.*?)</td>',
+                fgoals.group(1), re.DOTALL,
+            )
+            if away_goals:
+                for item in re.findall(
+                    r'<li>(.*?)</li>', away_goals.group(1), re.DOTALL
+                ):
+                    ev = parse_event_item(item, 'a')
+                    if ev:
+                        events.append(ev)
 
         key = normalize(f"{home}_{away}")
         rkey = normalize(f"{away}_{home}")
@@ -127,101 +223,168 @@ TEAM_ALIASES = {
     "Curacao": "Curacao",
     "Scotland": "Scotland",
     "DR Congo": "Congo DR",
-    "DRC": "Congo DR",
+    "Czech Republic": "Czech Republic",
+    "New Zealand": "New Zealand",
+    "Saudi Arabia": "Saudi Arabia",
+    "United States": "United States",
+    "Bosnia and Herzegovina": "Bosnia and Herzegovina",
 }
 
 
 def normalize(name):
-    n = TEAM_ALIASES.get(name, name)
-    return re.sub(r'[^a-z0-9]', '', n.lower())
+    """Normalize a team name for comparison."""
+    n = name.strip().lower()
+    n = re.sub(r"[^a-z0-9]", "", n)
+
+    for alias, canonical in TEAM_ALIASES.items():
+        alias_norm = alias.strip().lower()
+        alias_norm = re.sub(r"[^a-z0-9]", "", alias_norm)
+        if n == alias_norm:
+            return normalize(canonical)
+    return n
 
 
-# ========== Time utils ==========
-
-def uk_to_beijing(day, month, time_str):
-    """Convert UK time (BST, UTC+1) to Beijing time (UTC+8)"""
-    h, m = map(int, time_str.split(':'))
-    total = h * 60 + m + 7 * 60
-    new_days, rem = divmod(total, 1440)
-    new_h, new_min = divmod(rem, 60)
-    bj_day = day + new_days
-    bj_month = month
-    import calendar
-    dim = calendar.monthrange(2026, bj_month)[1]
-    if bj_day > dim:
-        bj_day -= dim
-        bj_month += 1
-    return bj_day, bj_month, f"{new_h:02d}:{new_min:02d}"
-
-
-def determine_status(d, m, t):
-    """判断比赛状态: 'l'=进行中, 'f'=已结束, 'u'=未开始"""
-    bj_day, bj_month, bj_time = uk_to_beijing(d, m, t)
-    h, mn = map(int, bj_time.split(':'))
-    kickoff = datetime(2026, bj_month, bj_day, h, mn, tzinfo=BJ_TZ)
-    now = datetime.now(BJ_TZ)
-    minutes_since = (now - kickoff).total_seconds() / 60
-    if minutes_since < -30:
-        return 'u'
-    elif minutes_since < 155:
-        return 'l'
-    return 'f'
-
+# ========== HTML Helpers ==========
 
 def get_all_teams_from_html(lines):
-    """Extract all (line_idx, home, away, day, month, time) from MATCHES."""
-    teams = []
-    for i, line in enumerate(lines):
-        m = re.search(r"h:'([^']+)',a:'([^']+)',t:'([^']+)',p:'GS'", line)
-        if not m:
+    """Find all MATCHES entries that still have sc:null (unplayed) and
+    return list of (line_index, home_team, away_team, day, month, time_str)."""
+    matches = []
+    for idx, line in enumerate(lines):
+        line = line.strip()
+        if line.startswith("//") or not line:
             continue
-        dm = re.search(r"d:(\d+),m:(\d+)", line)
-        if not dm:
-            continue
-        home = m.group(1)
-        away = m.group(2)
-        time_str = m.group(3)
-        day = int(dm.group(1))
-        month = int(dm.group(2))
-        teams.append((i, home, away, day, month, time_str))
-    return teams
+        # Match a JS object line
+        m = re.match(
+            r'\{d:(\d+),m:(\d+),grp:\'[^\']+\',h:\'([^\']+)\',a:\'([^\']+)\''
+            r',t:\'([^\']+)\'.*\}',
+            line
+        )
+        if m:
+            day = int(m.group(1))
+            month = int(m.group(2))
+            home = m.group(3)
+            away = m.group(4)
+            time_str = m.group(5)
+            matches.append((idx, home, away, day, month, time_str))
+    return matches
 
+
+# ========== Time handling ==========
+
+def uk_to_beijing(day, month, time_str):
+    """Convert UK time to Beijing time.
+    UK is currently BST (UTC+1). Beijing is UTC+8.
+    """
+    def parse_minutes(t):
+        parts = t.split(':')
+        return int(parts[0]) * 60 + int(parts[1])
+
+    def format_time(minutes):
+        return f"{minutes // 60:02d}:{minutes % 60:02d}"
+
+    # UK is UTC+1 (BST), Beijing is UTC+8 -> +7 hours
+    uk_minutes = parse_minutes(time_str)
+    bj_minutes = uk_minutes + 7 * 60
+
+    # Handle day rollover
+    bj_day = day + (bj_minutes // (24 * 60))
+    bj_minutes = bj_minutes % (24 * 60)
+    bj_mon = month
+
+    # Simple month rollover check (June has 30 days)
+    if bj_mon == 6 and bj_day > 30:
+        bj_day -= 30
+        bj_mon = 7
+    elif bj_mon == 7 and bj_day > 31:
+        bj_day -= 31
+        bj_mon = 8
+
+    return bj_day, bj_mon, format_time(bj_minutes)
+
+
+def determine_status(day, month, time_str):
+    """Check if a match should be finished, live, or upcoming.
+    Returns 'f', 'l', or 'u'.
+    Returns 'u' for TBC/unknown times.
+    """
+    if time_str == 'TBC' or not time_str:
+        return 'u'
+
+    try:
+        parts = time_str.split(':')
+        start_minutes = int(parts[0]) * 60 + int(parts[1])
+    except (ValueError, IndexError):
+        return 'u'
+
+    now_utc = datetime.now(timezone.utc)
+    # UK is BST = UTC+1
+    uk_now = now_utc.astimezone(timezone(timedelta(hours=1)))
+
+    end_minutes = start_minutes + 120
+
+    try:
+        match_start = uk_now.replace(hour=start_minutes // 60, minute=start_minutes % 60, second=0, microsecond=0)
+        match_end = uk_now.replace(hour=end_minutes // 60, minute=end_minutes % 60, second=0, microsecond=0)
+    except ValueError:
+        return 'u'
+
+    # Adjust for day difference
+    match_start = match_start.replace(day=day, month=month)
+    match_end = match_end.replace(day=day, month=month)
+
+    if match_end < uk_now:
+        return 'f'
+    elif match_start <= uk_now <= match_end:
+        return 'l'
+    else:
+        return 'u'
+
+
+# ========== Main update logic ==========
 
 def update():
-    print("=" * 50)
-    now = datetime.now(BJ_TZ)
-    print(f"🕐 {now.strftime('%Y-%m-%d %H:%M:%S')} 更新赛果 (北京时间)")
-    print("=" * 50)
-
+    """Fetch scores from Wikipedia and update index.html."""
     with open(HTML_FILE, "r", encoding="utf-8") as f:
-        html_lines = f.read().split("\n")
+        html_content = f.read()
+
+    html_lines = html_content.split("\n")
 
     # Get all group stage matches from HTML
     all_matches = get_all_teams_from_html(html_lines)
 
     # Find which matches should be finished or in progress
     need_score = []
+    need_events = []
     for idx, home, away, day, month, time_str in all_matches:
         status = determine_status(day, month, time_str)
         if status == 'f' or status == 'l':
-            # Check if score is already filled
             line = html_lines[idx]
+            # Need score if null
             if 'sc:null' in line:
                 need_score.append((idx, home, away, day, month, time_str))
+            # Need events if empty events array AND has a score
+            elif re.search(r'ev:\s*\[\s*\]', line) and re.search(r"sc:'[^']+'", line):
+                need_events.append((idx, home, away, day, month, time_str))
 
     if not need_score:
-        print("  ℹ️ 没有需要更新的比赛（所有已完赛比赛均已录入）")
+        print("  ℹ️ 没有需要更新比分的比赛")
     else:
         print(f"  🔍 {len(need_score)} 场比赛需要更新比分:")
         for _, home, away, day, month, t in need_score:
             bj_day, bj_mon, bj_time = uk_to_beijing(day, month, t)
             print(f"     {home} vs {away} ({bj_mon}/{bj_day} {bj_time})")
 
-    # Try Wikipedia for ALL matches (including ones already scored, to verify)
+    if need_events:
+        print(f"  🔍 {len(need_events)} 场比赛需要补填进球事件:")
+        for _, home, away, day, month, t in need_events:
+            print(f"     {home} vs {away}")
+
+    # Try Wikipedia for ALL matches
     print("\n📡 正在从 Wikipedia 获取赛果...")
     all_wiki_scores = {}
 
-    # 单次请求获取整个页面 → 解析所有 football box
+    # Single request for the whole page
     print("  正在获取完整页面...", end=' ')
     full_html = fetch_full_page()
     if full_html:
@@ -236,28 +399,31 @@ def update():
         return False
 
     # Match Wikipedia scores to HTML matches
-    updated = 0
+    updated_score = 0
+    updated_events = 0
+
+    # Helper: look up a match in wiki data
+    def lookup_wiki(home, away, wiki_data):
+        key = normalize(f"{home}_{away}")
+        rkey = normalize(f"{away}_{home}")
+        wiki = wiki_data.get(key) or wiki_data.get(rkey)
+        if not wiki:
+            h_norm = normalize(home)
+            a_norm = normalize(away)
+            for wk, wv in wiki_data.items():
+                if h_norm in wk and a_norm in wk and len(wk) <= max(len(h_norm), len(a_norm)) * 2 + 2:
+                    wiki = wv
+                    break
+        return wiki
+
+    # Process matches needing score updates
     for idx, home, away, day, month, t_str in need_score:
         line = html_lines[idx]
         line_stripped = line.strip()
         if line_stripped.startswith("//"):
             continue
 
-        # Try direct match
-        key = normalize(f"{home}_{away}")
-        rkey = normalize(f"{away}_{home}")
-
-        wiki = all_wiki_scores.get(key) or all_wiki_scores.get(rkey)
-        if not wiki:
-            # Fuzzy match
-            for wk, wv in all_wiki_scores.items():
-                # Check if both teams are present in the key
-                h_norm = normalize(home)
-                a_norm = normalize(away)
-                if h_norm in wk and a_norm in wk and len(wk) <= max(len(h_norm), len(a_norm)) * 2 + 2:
-                    wiki = wv
-                    break
-
+        wiki = lookup_wiki(home, away, all_wiki_scores)
         if not wiki:
             print(f"  ⚠ 找不到 {home} vs {away} 的比分")
             continue
@@ -265,44 +431,59 @@ def update():
         score = wiki['score']
         status = 'f'
 
-        # Check if events data is already filled
-        has_events = bool(re.search(r"ev:\[.*?\]", line)) and not re.search(r"ev:\[\]", line)
-
         # Build the replacement string
-        # We preserve existing events if they're already set and non-empty
         new_line = re.sub(
             r"sc:null",
             f"sc:'{score}'",
             line, count=1
         )
-        new_line = re.sub(
-            r"(sc:'[^']+')\s*,\s*(?!(?:st|et|ev))",  # don't drop st/et/ev
-            r"\1,",
-            new_line, count=1
-        )
 
-        # Add st and et fields if missing
+        # Add st field if missing
         if "st:'" not in new_line:
             new_line = re.sub(r"sc:'[^']+'", f"sc:'{score}',st:'{status}'", new_line, count=1)
         else:
             new_line = re.sub(r"st:'[^lfu]'", f"st:'{status}'", new_line)
 
-        # Add empty events if line has none
+        # Add events
+        ev_str = generate_html_events(wiki.get('events', []))
         if "ev:" not in new_line:
-            new_line = re.sub(r"et:false", "et:false,ev:[]", new_line)
+            new_line = re.sub(r"et:false", f"et:false,ev:{ev_str}", new_line)
+        else:
+            new_line = re.sub(r"ev:\s*\[.*?\]", f"ev:{ev_str}", new_line)
 
         html_lines[idx] = new_line
-        updated += 1
-        print(f"  ✅ {home} {score} {away}")
+        updated_score += 1
+        print(f"  ✅ {home} {score} {away} ({len(wiki.get('events',[]))} events)")
 
-    if updated == 0:
+    # Process matches needing event fills (already have score, empty events)
+    for idx, home, away, day, month, t_str in need_events:
+        line = html_lines[idx]
+        line_stripped = line.strip()
+        if line_stripped.startswith("//"):
+            continue
+
+        wiki = lookup_wiki(home, away, all_wiki_scores)
+        if not wiki:
+            continue
+
+        if not wiki.get('events'):
+            print(f"  ℹ️ {home} vs {away}: Wikipedia 暂无进球事件数据")
+            continue
+
+        ev_str = generate_html_events(wiki['events'])
+        new_line = re.sub(r"ev:\s*\[\s*\]", f"ev:{ev_str}", line)
+        html_lines[idx] = new_line
+        updated_events += 1
+        print(f"  ✅ {home} vs {away}: 补填 {len(wiki['events'])} 个进球事件")
+
+    if updated_score == 0 and updated_events == 0:
         print("\n  ℹ️ 没有匹配到需要更新的比赛")
         return False
 
     new_html = "\n".join(html_lines)
     with open(HTML_FILE, "w", encoding="utf-8") as f:
         f.write(new_html)
-    print(f"\n  ✅ 已更新 {updated} 场比赛到 index.html")
+    print(f"\n  ✅ 已更新 {updated_score} 场比分 + {updated_events} 场进球事件到 index.html")
     return True
 
 
