@@ -8,6 +8,7 @@
 import re
 import os
 import json
+import unicodedata
 import subprocess
 import urllib.request
 import urllib.error
@@ -75,11 +76,17 @@ def parse_event_item(item, side):
 
 
 def generate_html_events(events):
-    """Convert Wikipedia events to HTML JS object literal format.
+    """Convert Wikipedia events to rich Chinese JS object literal format.
 
     Returns a string like:
     [{min:10,t:'h',p:'Player',ic:'⚽',d:'...'},{...}]
     Returns '[]' for empty/no events.
+
+    Produces varied Chinese descriptions with:
+    - Different scoring verbs
+    - Brace/hat-trick detection
+    - Proper handling of penalties, own goals
+    - Scoreline context
     """
     if not events:
         return "[]"
@@ -94,16 +101,41 @@ def generate_html_events(events):
         ),
     )
 
+    # Track goals per player for brace/hat-trick detection
+    player_goals_h = {}
+    player_goals_a = {}
     home_goals = 0
     away_goals = 0
     parts = []
 
+    # Verb templates for variety (rotate based on goal index)
+    GOAL_VERBS = [
+        "劲射破门",
+        "捅射入网",
+        "抽射得分",
+        "推射建功",
+        "攻入一球",
+        "抢点破门",
+        "低射得手",
+        "包抄到位",
+    ]
+
     for ev in sorted_ev:
         if ev['side'] == 'h':
+            cur_side_goals = home_goals
             home_goals += 1
+            pg = player_goals_h
         else:
+            cur_side_goals = away_goals
             away_goals += 1
+            pg = player_goals_a
+
         current_score = f"{home_goals}-{away_goals}"
+
+        # How many times has THIS player scored so far (including this one)?
+        player = ev['player']
+        gc = pg.get(player, 0) + 1
+        pg[player] = gc
 
         # Icon
         if ev['own_goal']:
@@ -113,15 +145,25 @@ def generate_html_events(events):
         else:
             ic = '⚽'
 
-        # Chinese description
+        # Chinese description — richness depends on goal type & count
         if ev['own_goal']:
-            desc = f"{ev['player']} 乌龙球，比分 {current_score}"
+            desc = f"{player} 不慎自摆乌龙，比分 {current_score}"
         elif ev['penalty']:
-            desc = f"{ev['player']} 点球命中，比分 {current_score}"
+            desc = f"{player} 点球一蹴而就！比分 {current_score}"
         else:
-            desc = f"{ev['player']} 破门，比分 {current_score}"
+            # Use a verb from the template for variety
+            verb_idx = (cur_side_goals + len(parts)) % len(GOAL_VERBS)
+            verb = GOAL_VERBS[verb_idx]
+            if gc == 2:
+                desc = f"{player} 梅开二度！{verb}，比分 {current_score}"
+            elif gc == 3:
+                desc = f"{player} 帽子戏法！{verb}，比分 {current_score}"
+            elif gc > 3:
+                desc = f"{player} 大四喜！{verb}，比分 {current_score}"
+            else:
+                desc = f"{player} {verb}，比分 {current_score}"
 
-        p_esc = ev['player'].replace("'", "\\'")
+        p_esc = player.replace("'", "\\'")
         d_esc = desc.replace("'", "\\'")
 
         parts.append(
@@ -223,17 +265,24 @@ TEAM_ALIASES = {
 
 
 def normalize(name):
-    """Normalize a team name for comparison (iterative, no recursion)."""
+    """Normalize a team name for comparison (iterative, no recursion).
+
+    Uses Unicode NFKD decomposition to strip diacritics (curaçao → curacao)
+    before stripping non-ASCII chars, so aliases with accented characters work.
+    """
     n = name.strip().lower()
+    n = unicodedata.normalize("NFKD", n)
     n = re.sub(r"[^a-z0-9]", "", n)
     seen = set()
     while True:
         matched = False
         for alias, canonical in TEAM_ALIASES.items():
             a = alias.strip().lower()
+            a = unicodedata.normalize("NFKD", a)
             a = re.sub(r"[^a-z0-9]", "", a)
             if n == a:
                 c = canonical.strip().lower()
+                c = unicodedata.normalize("NFKD", c)
                 c = re.sub(r"[^a-z0-9]", "", c)
                 if c in seen:
                     return n  # cycle guard
