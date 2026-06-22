@@ -210,38 +210,39 @@ TEAM_ALIASES = {
     "U.S.": "United States",
     "America": "United States",
     "Holland": "Netherlands",
-    "South Korea": "South Korea",
     "Republic of Korea": "South Korea",
     "Korea Republic": "South Korea",
     "Korea": "South Korea",
-    "Ivory Coast": "Ivory Coast",
     "Côte d'Ivoire": "Ivory Coast",
-    "Cape Verde": "Cape Verde",
     "Cabo Verde": "Cape Verde",
     "Bosnia": "Bosnia and Herzegovina",
     "Curaçao": "Curacao",
-    "Curacao": "Curacao",
-    "Scotland": "Scotland",
     "DR Congo": "Congo DR",
-    "Czech Republic": "Czech Republic",
-    "New Zealand": "New Zealand",
-    "Saudi Arabia": "Saudi Arabia",
-    "United States": "United States",
-    "Bosnia and Herzegovina": "Bosnia and Herzegovina",
+    "DRC": "Congo DR",
 }
 
 
 def normalize(name):
-    """Normalize a team name for comparison."""
+    """Normalize a team name for comparison (iterative, no recursion)."""
     n = name.strip().lower()
     n = re.sub(r"[^a-z0-9]", "", n)
-
-    for alias, canonical in TEAM_ALIASES.items():
-        alias_norm = alias.strip().lower()
-        alias_norm = re.sub(r"[^a-z0-9]", "", alias_norm)
-        if n == alias_norm:
-            return normalize(canonical)
-    return n
+    seen = set()
+    while True:
+        matched = False
+        for alias, canonical in TEAM_ALIASES.items():
+            a = alias.strip().lower()
+            a = re.sub(r"[^a-z0-9]", "", a)
+            if n == a:
+                c = canonical.strip().lower()
+                c = re.sub(r"[^a-z0-9]", "", c)
+                if c in seen:
+                    return n  # cycle guard
+                seen.add(c)
+                n = c
+                matched = True
+                break
+        if not matched:
+            return n
 
 
 # ========== HTML Helpers ==========
