@@ -237,8 +237,10 @@ def extract_all_scores(html):
                     if ev:
                         events.append(ev)
 
-        key = normalize(f"{home}_{away}")
-        rkey = normalize(f"{away}_{home}")
+        h_norm = normalize(home)
+        a_norm = normalize(away)
+        key = f"{h_norm}_{a_norm}"
+        rkey = f"{a_norm}_{h_norm}"
         results[key] = {'score': score, 'events': events}
         results[rkey] = {'score': score, 'events': events, 'reversed': True}
 
@@ -462,12 +464,12 @@ def update():
 
     # Helper: look up a match in wiki data
     def lookup_wiki(home, away, wiki_data):
-        key = normalize(f"{home}_{away}")
-        rkey = normalize(f"{away}_{home}")
+        h_norm = normalize(home)
+        a_norm = normalize(away)
+        key = f"{h_norm}_{a_norm}"
+        rkey = f"{a_norm}_{h_norm}"
         wiki = wiki_data.get(key) or wiki_data.get(rkey)
         if not wiki:
-            h_norm = normalize(home)
-            a_norm = normalize(away)
             for wk, wv in wiki_data.items():
                 if h_norm in wk and a_norm in wk and len(wk) <= max(len(h_norm), len(a_norm)) * 2 + 2:
                     wiki = wv
